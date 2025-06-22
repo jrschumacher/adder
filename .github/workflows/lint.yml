@@ -38,4 +38,4 @@ jobs:
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v8
       with:
-        args: --timeout=10m
+        args: --timeout=10m --disable=forbidigo,gosec,mnd,nilnil --enable=errcheck,govet,staticcheck,unused

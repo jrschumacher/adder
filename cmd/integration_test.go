@@ -90,16 +90,16 @@ func TestVersionHandler_HandleVersion(t *testing.T) {
 	// Create handler
 	handler := NewVersionHandler()
 	req := &generated.VersionRequest{}
-	
+
 	// Create mock command
 	cmd := &cobra.Command{}
-	
+
 	// Test the handler
 	err := handler.HandleVersion(cmd, req)
 	if err != nil {
 		t.Fatalf("HandleVersion failed: %v", err)
 	}
-	
+
 	// Note: This test would be improved by injecting output writers
 	// For now, we just verify it doesn't error
 }
@@ -196,7 +196,7 @@ A complex test command with arguments and flags.`,
 	expectedInComplex := []string{
 		"package e2etest",
 		"ComplexRequestArguments",
-		"ComplexRequestFlags", 
+		"ComplexRequestFlags",
 		"ComplexRequest",
 		"ComplexHandler",
 		"HandleComplex",
@@ -232,7 +232,7 @@ func TestCLI_ErrorHandling(t *testing.T) {
 			req: &generated.GenerateRequest{
 				Flags: generated.GenerateRequestFlags{
 					Input:   "testdata",
-					Output:  "/tmp/test-output", 
+					Output:  "/tmp/test-output",
 					Package: "",
 					Suffix:  "_generated.go",
 				},
@@ -247,7 +247,7 @@ func TestCLI_ErrorHandling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := handler.HandleGenerate(cmd, tt.req)
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("Expected error but got none")
 			}

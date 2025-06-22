@@ -11,7 +11,7 @@ import (
 type GenerateRequestFlags struct {
 	Input string `json:"input"` // Input directory containing markdown files
 	Output string `json:"output"` // Output directory for generated files
-	Package string `json:"package"` // Go package name for generated files
+	Package string `json:"pkg"` // Go package name for generated files
 	Suffix string `json:"suffix"` // File suffix for generated files
 }
 

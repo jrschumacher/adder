@@ -21,7 +21,7 @@ func NewGenerateHandler() *GenerateHandler {
 // HandleGenerate processes the generate command request to create CLI command stubs.
 func (h *GenerateHandler) HandleGenerate(_ *cobra.Command, req *generated.GenerateRequest) error {
 	fmt.Printf("🐍 Generating CLI commands from %s to %s...\n", req.Flags.Input, req.Flags.Output)
-	
+
 	// Configure the generator
 	config := &adder.Config{
 		InputDir:   req.Flags.Input,
@@ -65,7 +65,7 @@ func (h *GenerateHandler) HandleGenerate(_ *cobra.Command, req *generated.Genera
 	fmt.Println("  1. Implement handler interfaces in your handlers package")
 	fmt.Println("  2. Wire commands using the generated constructors")
 	fmt.Println("  3. Add commands to your root command")
-	
+
 	return nil
 }
 

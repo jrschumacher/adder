@@ -64,18 +64,18 @@ func (g *Generator) groupCommandsByFile() map[string][]*Command {
 func (g *Generator) getOutputFilename(cmd *Command) string {
 	// FilePath is already relative to InputDir from filesystem walk
 	// e.g., "auth/login.md" -> "adder/auth/login_generated.go"
-	
+
 	// Replace .md extension with configured suffix
 	dir := filepath.Dir(cmd.FilePath)
 	base := filepath.Base(cmd.FilePath)
 	nameWithoutExt := base[:len(base)-len(filepath.Ext(base))]
 	filename := nameWithoutExt + g.config.FileSuffix
-	
+
 	// Handle root directory case
 	if dir == "." {
 		return filepath.Join(g.config.OutputDir, filename)
 	}
-	
+
 	return filepath.Join(g.config.OutputDir, dir, filename)
 }
 
@@ -174,7 +174,6 @@ func (g *Generator) generateCommand(cmd *Command) (string, error) {
 	return buf.String(), nil
 }
 
-
 // GenerateFromDirectory is a convenience function to generate from a directory path
 func GenerateFromDirectory(_, inputDir string) error {
 	// Load config (for now use default)
@@ -220,11 +219,11 @@ func (g *Generator) ValidateCommands() error {
 func (g *Generator) GetStats() map[string]int {
 	stats := make(map[string]int)
 	stats["total_commands"] = len(g.commands)
-	
+
 	for _, cmd := range g.commands {
 		stats["total_arguments"] += len(cmd.Arguments)
 		stats["total_flags"] += len(cmd.Flags)
 	}
-	
+
 	return stats
 }

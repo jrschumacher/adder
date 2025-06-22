@@ -20,7 +20,6 @@ Adder generates type-safe CLI commands from markdown documentation, providing a 
 - **📁 Organized Output** - Preserves directory structure to avoid naming conflicts
 - **🧪 Comprehensive Testing** - Unit, integration, golden file, and example tests
 - **🚀 Production Ready** - Full CI/CD pipeline with automated releases
-- **🐳 Container Support** - Docker images for easy deployment
 - **🔧 Self-Dogfooding** - Adder generates its own CLI commands
 
 ## 🚀 Quick Start
@@ -38,10 +37,6 @@ go install github.com/jrschumacher/adder/cmd@latest
 # https://github.com/jrschumacher/adder/releases
 ```
 
-**Via Docker:**
-```bash
-docker run --rm -v $(pwd):/workspace ghcr.io/jrschumacher/adder:latest generate -i docs/man -o generated -p generated
-```
 
 ### 2. Define Command
 
@@ -157,7 +152,6 @@ Adder is built with production use in mind:
 
 ### ✅ **Reliability**
 - **Multi-Platform Support** - Linux, macOS, Windows (AMD64 + ARM64)
-- **Container Images** - Docker images for consistent deployment
 - **Semantic Versioning** - Automated releases with conventional commits
 - **Backward Compatibility** - Careful API evolution
 
@@ -215,14 +209,6 @@ make generate-example
 make generate-self
 ```
 
-**Docker Development:**
-```bash
-# Build Docker image
-make docker-build
-
-# Run in container
-make docker-run
-```
 
 ## 🎬 Example Output
 
@@ -244,7 +230,6 @@ Adder uses automated releases with [release-please](https://github.com/googleapi
 1. **Merge to main** triggers release PR creation
 2. **Merge release PR** creates GitHub release
 3. **Automated builds** create multi-platform binaries
-4. **Docker images** published to GitHub Container Registry
 
 Use [conventional commits](https://www.conventionalcommits.org/) for automatic versioning:
 - `feat:` → minor version bump

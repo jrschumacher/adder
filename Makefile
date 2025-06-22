@@ -97,16 +97,6 @@ install: build ## Install the binary to GOPATH/bin
 	@echo "Installing $(BINARY_NAME)..."
 	@cp $(BINARY_NAME) $(shell go env GOPATH)/bin/
 
-.PHONY: docker-build
-docker-build: ## Build Docker image
-	@echo "Building Docker image..."
-	@docker build -t adder:$(VERSION) .
-	@docker tag adder:$(VERSION) adder:latest
-
-.PHONY: docker-run
-docker-run: docker-build ## Run Docker container
-	@echo "Running Docker container..."
-	@docker run --rm -it adder:$(VERSION)
 
 .PHONY: generate-example
 generate-example: build ## Generate example commands
