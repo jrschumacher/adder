@@ -162,7 +162,7 @@ command:
 
 			// Test validation
 			err = generator.Validate()
-			
+
 			if tt.wantError && err == nil {
 				t.Errorf("Expected validation error but got none")
 			}
@@ -206,8 +206,7 @@ func TestGenerator_GetStats(t *testing.T) {
 
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || 
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(substr) <= len(s) && s[:len(substr)] == substr) ||
 		contains(s[1:], substr))
 }
-

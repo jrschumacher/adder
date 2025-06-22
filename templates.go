@@ -154,7 +154,7 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 func TemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"pascalCase": pascalCase,
-		"camelCase":  func(s string) string {
+		"camelCase": func(s string) string {
 			result := camelCase(s)
 			// Handle Go reserved keywords
 			switch result {

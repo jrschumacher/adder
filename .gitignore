@@ -31,3 +31,5 @@ example/hello-example
 # Build artifacts
 dist/
 bin/
+adder
+test-output/

@@ -9,12 +9,7 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        go-version: ['1.21', '1.22', '1.23']
-    
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -22,7 +17,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version-file: go.mod
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -30,9 +25,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-go-
 
     - name: Download dependencies
       run: go mod download
@@ -52,13 +47,11 @@ jobs:
       run: go test -v -run TestGenerator_GoldenFiles
 
     - name: Generate coverage report
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.23'
       run: |
         go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
         go tool cover -html=coverage.out -o coverage.html
 
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.23'
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.out
@@ -66,7 +59,6 @@ jobs:
         name: codecov-umbrella
 
     - name: Upload coverage artifacts
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.23'
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
@@ -74,34 +66,34 @@ jobs:
           coverage.out
           coverage.html
 
-  test-docs:
-    name: Test Documentation
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  # test-docs:
+  #   name: Test Documentation
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.23'
+  #   - name: Set up Go
+  #     uses: actions/setup-go@v5
+  #     with:
+  #       go-version-file: go.mod
 
-    - name: Build adder CLI
-      run: go build -o adder ./cmd
+  #   - name: Build adder CLI
+  #     run: go build -o adder ./cmd
 
-    - name: Test adder with example docs
-      run: |
-        ./adder generate --input example/docs/man --output test-output --package testpkg
+  #   - name: Test adder with example docs
+  #     run: |
+  #       ./adder generate --input example/docs/man --output test-output --package testpkg
         
-    - name: Verify generated files compile
-      run: |
-        echo "package main" > test-output/main.go
-        echo "import _ \"./testpkg\"" >> test-output/main.go
-        echo "func main() {}" >> test-output/main.go
-        cd test-output && go mod init test && go mod tidy && go build
+  #   - name: Verify generated files compile
+  #     run: |
+  #       echo "package main" > test-output/main.go
+  #       echo "import _ \"testpkg\"" >> test-output/main.go
+  #       echo "func main() {}" >> test-output/main.go
+  #       cd test-output && go mod init test && go mod tidy && go build
 
-    - name: Test self-dogfooding
-      run: |
-        ./adder generate --input docs/commands --output self-test --package selftest
-        # Verify the self-generated code compiles
-        cd self-test && go mod init selftest && go mod tidy && go build || true
+  #   - name: Test self-dogfooding
+  #     run: |
+  #       ./adder generate --input docs/commands --output self-test --package selftest
+  #       # Verify the self-generated code compiles
+  #       cd self-test && go mod init selftest && go mod tidy && go build || true

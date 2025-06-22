@@ -96,8 +96,8 @@ command:
 # Invalid Command`,
 			filePath: "invalid.md",
 			want: &Command{
-				Title: "Invalid Command",
-				Name:  "invalid",
+				Title:     "Invalid Command",
+				Name:      "invalid",
 				Arguments: []Argument{},
 				Flags: []Flag{
 					{
@@ -108,7 +108,7 @@ command:
 				Description: "# Invalid Command",
 				FilePath:    "invalid.md",
 			},
-			wantErr:  false, // Parser doesn't validate unknown fields, just ignores them
+			wantErr: false, // Parser doesn't validate unknown fields, just ignores them
 		},
 		{
 			name: "no command section",
@@ -130,22 +130,22 @@ This has no command section.`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parser.ParseContent(tt.content, tt.filePath)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parser.ParseContent() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+
 			if tt.want == nil && got != nil {
 				t.Errorf("Parser.ParseContent() = %v, want nil", got)
 				return
 			}
-			
+
 			if tt.want != nil && got == nil {
 				t.Errorf("Parser.ParseContent() = nil, want %v", tt.want)
 				return
 			}
-			
+
 			if tt.want != nil && got != nil {
 				if got.Title != tt.want.Title {
 					t.Errorf("Parser.ParseContent() Title = %v, want %v", got.Title, tt.want.Title)
@@ -166,11 +166,11 @@ This has no command section.`,
 
 func TestParser_cleanCommandName(t *testing.T) {
 	parser := NewParser(&Config{})
-	
+
 	tests := []struct {
-		name string
+		name  string
 		input string
-		want string
+		want  string
 	}{
 		{"simple command", "hello", "hello"},
 		{"command with argument", "hello [name]", "hello"},
@@ -178,7 +178,7 @@ func TestParser_cleanCommandName(t *testing.T) {
 		{"command with spaces", "hello world [name]", "hello"},
 		{"command with brackets in name", "test[bracket]", "testbracket"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := parser.cleanCommandName(tt.input)
@@ -200,7 +200,7 @@ func TestFlag_GetGoType(t *testing.T) {
 		{"int flag", Flag{Type: "int"}, "int"},
 		{"default type", Flag{Type: ""}, "string"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.flag.GetGoType()
@@ -238,7 +238,7 @@ func TestFlag_GetValidationTag(t *testing.T) {
 			"",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.flag.GetValidationTag()

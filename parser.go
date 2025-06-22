@@ -137,7 +137,7 @@ func (p *Parser) validateCommand(cmd *Command) error {
 		}
 		if flag.Type == "" {
 			cmd.Flags[i].Type = TypeString // Default type
-			flag.Type = TypeString // Update local copy for validation
+			flag.Type = TypeString         // Update local copy for validation
 		}
 
 		// Validate enum values
@@ -153,7 +153,7 @@ func (p *Parser) validateCommand(cmd *Command) error {
 func (p *Parser) GetCommandPath(filePath string) string {
 	// Remove file extension
 	path := strings.TrimSuffix(filePath, ".md")
-	
+
 	// Convert to command path (replace / with spaces for now)
 	return strings.ReplaceAll(path, "/", " ")
 }

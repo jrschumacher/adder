@@ -214,10 +214,9 @@ type HandlerInterface struct {
 
 // HandlerMethod represents a method in a handler interface
 type HandlerMethod struct {
-	Name       string
+	Name        string
 	RequestType string
 }
-
 
 // GeneratorInterface defines the interface for code generators
 type GeneratorInterface interface {
