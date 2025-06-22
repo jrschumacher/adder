@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Build artifacts
+dist/
+*.tar.gz
+*.zip
+
+# Test files
+*_test.go
+testdata/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+
+# Example directory
+example/
+
+# GitHub workflows
+.github/
