@@ -4,8 +4,11 @@
 
 Adder generates type-safe CLI commands from markdown documentation, providing a clean separation between command structure and business logic.
 
+[![Test](https://github.com/jrschumacher/adder/actions/workflows/test.yml/badge.svg)](https://github.com/jrschumacher/adder/actions/workflows/test.yml)
+[![Lint](https://github.com/jrschumacher/adder/actions/workflows/lint.yml/badge.svg)](https://github.com/jrschumacher/adder/actions/workflows/lint.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jrschumacher/adder.svg)](https://pkg.go.dev/github.com/jrschumacher/adder)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jrschumacher/adder)](https://goreportcard.com/report/github.com/jrschumacher/adder)
+[![Release](https://img.shields.io/github/v/release/jrschumacher/adder)](https://github.com/jrschumacher/adder/releases)
 
 ## ✨ Features
 
@@ -20,8 +23,20 @@ Adder generates type-safe CLI commands from markdown documentation, providing a 
 
 ### 1. Install
 
+**Via Go Install:**
 ```bash
 go install github.com/jrschumacher/adder/cmd@latest
+```
+
+**Via GitHub Releases:**
+```bash
+# Download binary for your platform from:
+# https://github.com/jrschumacher/adder/releases
+```
+
+**Via Docker:**
+```bash
+docker run --rm -v $(pwd):/workspace ghcr.io/jrschumacher/adder:latest generate -i docs/man -o generated -p generated
 ```
 
 ### 2. Define Command
@@ -126,23 +141,106 @@ This prevents naming conflicts between commands like `auth create` and `policy c
 | **Organized Output**    | Directory structure prevents naming conflicts   |
 | **Command Access**      | Full `*cobra.Command` capabilities available    |
 
+## 🧪 Testing
+
+Adder includes comprehensive testing:
+
+```bash
+# Run all tests
+make test
+
+# Run with coverage
+make test-coverage
+
+# Run linting
+make lint
+
+# Run all CI checks locally
+make ci-test
+```
+
+**Test Categories:**
+- **Unit Tests** - Core parser and generator logic
+- **Integration Tests** - CLI command testing  
+- **Golden File Tests** - Generated code validation
+- **Example Tests** - Handler testing patterns
+
 ## 📚 Documentation
 
-- **[Quick Start Guide](docs/)** - Get up and running
 - **[Complete Example](example/)** - Working hello world demo
+- **[Testing Guide](docs/testing.md)** - Comprehensive testing patterns
+- **[GitHub Workflows](.github/README.md)** - CI/CD pipeline documentation
 - **[API Reference](https://pkg.go.dev/github.com/jrschumacher/adder)** - Full documentation
-- **[Command Reference](docs/commands/)** - CLI tool usage
+
+## 🏗️ Development
+
+**Local Development:**
+```bash
+# Build the CLI
+make build
+
+# Build for all platforms  
+make build-all
+
+# Generate example commands
+make generate-example
+
+# Self-generate CLI commands (dogfooding)
+make generate-self
+```
+
+**Docker Development:**
+```bash
+# Build Docker image
+make docker-build
+
+# Run in container
+make docker-run
+```
 
 ## 🎬 Example Output
 
 ```bash
 $ hello-example hello "Adder" --capitalize
 HELLO, ADDER!
+
+$ adder generate --input docs/man --output generated --package generated
+🐍 Generating CLI commands from docs/man to generated...
+🔍 Validating documentation...
+✅ Code generation completed!
+📊 Generated 3 commands with 5 flags and 2 arguments
 ```
+
+## 🚀 Release Process
+
+Adder uses automated releases with [release-please](https://github.com/googleapis/release-please):
+
+1. **Merge to main** triggers release PR creation
+2. **Merge release PR** creates GitHub release
+3. **Automated builds** create multi-platform binaries
+4. **Docker images** published to GitHub Container Registry
+
+Use [conventional commits](https://www.conventionalcommits.org/) for automatic versioning:
+- `feat:` → minor version bump
+- `fix:` → patch version bump  
+- `BREAKING CHANGE:` → major version bump
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
+We welcome contributions! 
+
+**Getting Started:**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Run `make ci-test` to validate
+5. Submit a pull request
+
+**Code Quality:**
+- All tests must pass
+- golangci-lint must pass
+- Include tests for new features
+- Update documentation as needed
 
 ## 📄 License
 
