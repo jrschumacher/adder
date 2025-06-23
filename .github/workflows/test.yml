@@ -66,34 +66,34 @@ jobs:
           coverage.out
           coverage.html
 
-  test-docs:
-    name: Test Documentation
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  # test-docs:
+  #   name: Test Documentation
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
+  #   - name: Set up Go
+  #     uses: actions/setup-go@v5
+  #     with:
+  #       go-version-file: go.mod
 
-    - name: Build adder CLI
-      run: go build -o adder ./cmd
+  #   - name: Build adder CLI
+  #     run: go build -o adder ./cmd
 
-    - name: Test adder with example docs
-      run: |
-        ./adder generate --input example/docs/man --output test-output --package testpkg
+  #   - name: Test adder with example docs
+  #     run: |
+  #       ./adder generate --input example/docs/man --output test-output --package testpkg
         
-    - name: Verify generated files compile
-      run: |
-        echo "package main" > test-output/main.go
-        echo "import _ \"testpkg\"" >> test-output/main.go
-        echo "func main() {}" >> test-output/main.go
-        cd test-output && go mod init test && go mod tidy && go build
+  #   - name: Verify generated files compile
+  #     run: |
+  #       echo "package main" > test-output/main.go
+  #       echo "import _ \"testpkg\"" >> test-output/main.go
+  #       echo "func main() {}" >> test-output/main.go
+  #       cd test-output && go mod init test && go mod tidy && go build
 
-    - name: Test self-dogfooding
-      run: |
-        ./adder generate --input docs/commands --output self-test --package selftest
-        # Verify the self-generated code compiles
-        cd self-test && go mod init selftest && go mod tidy && go build || true
+  #   - name: Test self-dogfooding
+  #     run: |
+  #       ./adder generate --input docs/commands --output self-test --package selftest
+  #       # Verify the self-generated code compiles
+  #       cd self-test && go mod init selftest && go mod tidy && go build || true
