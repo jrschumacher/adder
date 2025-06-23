@@ -6,8 +6,9 @@ Adder generates type-safe CLI commands from markdown documentation, providing a 
 
 [![Test](https://github.com/jrschumacher/adder/actions/workflows/test.yml/badge.svg)](https://github.com/jrschumacher/adder/actions/workflows/test.yml)
 [![Lint](https://github.com/jrschumacher/adder/actions/workflows/lint.yml/badge.svg)](https://github.com/jrschumacher/adder/actions/workflows/lint.yml)
+[![Release](https://github.com/jrschumacher/adder/actions/workflows/release.yml/badge.svg)](https://github.com/jrschumacher/adder/actions/workflows/release.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jrschumacher/adder.svg)](https://pkg.go.dev/github.com/jrschumacher/adder)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jrschumacher/adder)](https://goreportcard.com/report/github.com/jrschumacher/adder)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jrschumacher/adder)](https://github.com/jrschumacher/adder/report/github.com/jrschumacher/adder)
 [![Release](https://img.shields.io/github/v/release/jrschumacher/adder)](https://github.com/jrschumacher/adder/releases)
 
 ## ✨ Features
@@ -199,7 +200,7 @@ make ci-test
 # Build the CLI
 make build
 
-# Build for all platforms  
+# Build for all platforms (uses GitHub Actions)
 make build-all
 
 # Generate example commands
@@ -225,11 +226,11 @@ $ adder generate --input docs/man --output generated --package generated
 
 ## 🚀 Release Process
 
-Adder uses automated releases with [release-please](https://github.com/googleapis/release-please):
+Adder uses automated releases with [release-please](https://github.com/googleapis/release-please) and [GoReleaser](https://goreleaser.com/):
 
 1. **Merge to main** triggers release PR creation
-2. **Merge release PR** creates GitHub release
-3. **Automated builds** create multi-platform binaries
+2. **Merge release PR** creates GitHub release  
+3. **GoReleaser** automatically builds and publishes multi-platform binaries
 
 Use [conventional commits](https://www.conventionalcommits.org/) for automatic versioning:
 - `feat:` → minor version bump

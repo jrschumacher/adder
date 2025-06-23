@@ -1,0 +1,153 @@
+# GoReleaser configuration for adder CLI
+version: 2
+
+project_name: adder
+
+# Git configuration
+git:
+  tag_sort: -version:refname
+
+# Before hooks
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+# Build configuration
+builds:
+  - id: adder
+    main: ./cmd
+    binary: adder
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Ignore unsupported combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+# Archive configuration
+archives:
+  - id: adder
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    builds:
+      - adder
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG.md
+
+# Checksum configuration
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# Changelog configuration
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "^style:"
+      - "^refactor:"
+      - "Merge pull request"
+      - "Merge branch"
+  groups:
+    - title: "New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Performance Improvements"
+      regexp: "^.*perf[(\\w)]*:+.*$"
+      order: 2
+    - title: "Others"
+      order: 999
+
+# GitHub Release configuration
+release:
+  github:
+    owner: jrschumacher
+    name: adder
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Adder {{ .Tag }}
+    
+    Welcome to this new release of Adder!
+  footer: |
+    ## Installation
+    
+    ### Using Go
+    ```bash
+    go install github.com/jrschumacher/adder/cmd@{{ .Tag }}
+    ```
+    
+    ### Download Binary
+    Download the appropriate binary for your platform from the assets below.
+    
+    ## Checksums
+    
+    All binaries are checksummed and the checksums are included in the release.
+
+# Homebrew tap (optional - uncomment if you want to publish to Homebrew)
+# brews:
+#   - name: adder
+#     homepage: https://github.com/jrschumacher/adder
+#     description: "A documentation-driven CLI generator for Go applications"
+#     license: MIT
+#     repository:
+#       owner: jrschumacher
+#       name: homebrew-tap
+#     folder: Formula
+#     install: |
+#       bin.install "adder"
+#     test: |
+#       system "#{bin}/adder", "version"
+
+# Snapcraft (optional - uncomment if you want to publish to Snap Store)
+# snapcrafts:
+#   - name: adder
+#     summary: A documentation-driven CLI generator
+#     description: |
+#       Adder generates type-safe CLI commands from markdown documentation.
+#       It processes markdown files with YAML frontmatter to create type-safe
+#       command interfaces, request/response structures, and handler interfaces.
+#     grade: stable
+#     confinement: strict
+#     publish: false
+#     license: MIT
+#     base: core20
+#     apps:
+#       adder:
+#         plugs: ["home", "network"]
+
+# Universal Binaries for macOS (combines amd64 and arm64)
+universal_binaries:
+  - id: adder-universal
+    name_template: "adder"
+    replace: true
+    hooks:
+      post:
+        - cmd: codesign -s - {{ .Path }}
+          output: true
