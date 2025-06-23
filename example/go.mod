@@ -1,4 +1,4 @@
-module github.com/opentdf/adder/example
+module github.com/jrschumacher/adder/example
 
 go 1.23
 
@@ -9,4 +9,4 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 )
 
-replace github.com/opentdf/adder => ../
+replace github.com/jrschumacher/adder => ../

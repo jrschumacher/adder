@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/opentdf/adder/example/generated"
+	"github.com/jrschumacher/adder/example/generated"
 	"github.com/spf13/cobra"
 )
 
