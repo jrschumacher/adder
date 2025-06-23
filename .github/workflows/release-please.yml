@@ -22,14 +22,15 @@ jobs:
         with:
           release-type: go
           token: ${{ secrets.RELEASE_PLEASE_SECRET }}
-      - name: Checkout code
-        if: ${{ steps.release.outputs.release_created }}
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        
-      - name: Tag major and minor versions
-        if: ${{ steps.release.outputs.release_created }}
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Tag major and minor versions
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
@@ -43,13 +44,15 @@ jobs:
           git push origin v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
 
-      - name: Set up Go
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
 
-      - name: Run GoReleaser
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
@@ -58,7 +61,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
