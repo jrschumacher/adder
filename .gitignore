@@ -31,5 +31,5 @@ example/hello-example
 # Build artifacts
 dist/
 bin/
-adder
+/adder
 test-output/
