@@ -29,7 +29,7 @@ Adder generates type-safe CLI commands from markdown documentation, providing a 
 
 **Via Go Install:**
 ```bash
-go install github.com/jrschumacher/adder/cmd@latest
+go install github.com/jrschumacher/adder/cmd/adder@latest
 ```
 
 **Via GitHub Releases:**
