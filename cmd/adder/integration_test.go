@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jrschumacher/adder/cmd/generated"
+	"github.com/jrschumacher/adder/cmd/adder/generated"
 	"github.com/spf13/cobra"
 )
 
