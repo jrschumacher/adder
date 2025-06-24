@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/jrschumacher/adder/compare/v0.1.0...v0.1.1) (2025-06-24)
+
+
+### Bug Fixes
+
+* improve generator ([e5101ec](https://github.com/jrschumacher/adder/commit/e5101ec0673148ebb60bc5233ac471f85904860d))
+
 ## [0.1.0](https://github.com/jrschumacher/adder/compare/v1.0.0...v0.1.0) (2025-06-24)
 
 
