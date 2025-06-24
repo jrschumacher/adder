@@ -120,6 +120,9 @@ func (p *Parser) validateCommand(cmd *Command) error {
 		return fmt.Errorf("command title is required")
 	}
 
+	// Track field names to prevent duplicates
+	fieldNames := make(map[string]bool)
+
 	// Validate arguments
 	for i, arg := range cmd.Arguments {
 		if arg.Name == "" {
@@ -128,6 +131,13 @@ func (p *Parser) validateCommand(cmd *Command) error {
 		if arg.Type == "" {
 			cmd.Arguments[i].Type = TypeString // Default type
 		}
+
+		// Check for duplicate field names (after conversion to PascalCase)
+		fieldName := pascalCase(arg.Name)
+		if fieldNames[fieldName] {
+			return fmt.Errorf("duplicate field name after conversion: %s (from argument %s)", fieldName, arg.Name)
+		}
+		fieldNames[fieldName] = true
 	}
 
 	// Validate flags and set defaults
@@ -139,6 +149,13 @@ func (p *Parser) validateCommand(cmd *Command) error {
 			cmd.Flags[i].Type = TypeString // Default type
 			flag.Type = TypeString         // Update local copy for validation
 		}
+
+		// Check for duplicate field names (after conversion to PascalCase)
+		fieldName := pascalCase(flag.Name)
+		if fieldNames[fieldName] {
+			return fmt.Errorf("duplicate field name after conversion: %s (from flag %s)", fieldName, flag.Name)
+		}
+		fieldNames[fieldName] = true
 
 		// Validate enum values
 		if len(flag.Enum) > 0 && flag.Type != TypeString {

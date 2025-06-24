@@ -1,0 +1,211 @@
+name: 'Go Project CI/CD'
+description: 'Reusable GitHub Action for Go projects with lint, test, and release automation'
+author: 'Your Name'
+
+inputs:
+  go-version-file:
+    description: 'Path to go.mod file for Go version detection'
+    required: false
+    default: 'go.mod'
+  
+  lint-enabled:
+    description: 'Enable golangci-lint'
+    required: false
+    default: 'true'
+  
+  lint-timeout:
+    description: 'Timeout for golangci-lint'
+    required: false
+    default: '10m'
+  
+  lint-disable:
+    description: 'Comma-separated list of linters to disable'
+    required: false
+    default: 'forbidigo,gosec,mnd,nilnil'
+  
+  lint-enable:
+    description: 'Comma-separated list of linters to enable'
+    required: false
+    default: 'errcheck,govet,staticcheck,unused'
+  
+  test-enabled:
+    description: 'Enable testing'
+    required: false
+    default: 'true'
+  
+  test-race:
+    description: 'Enable race detection'
+    required: false
+    default: 'true'
+  
+  test-coverage:
+    description: 'Enable coverage reporting'
+    required: false
+    default: 'true'
+  
+  codecov-enabled:
+    description: 'Upload coverage to Codecov'
+    required: false
+    default: 'false'
+  
+  codecov-token:
+    description: 'Codecov token'
+    required: false
+  
+  release-enabled:
+    description: 'Enable release-please'
+    required: false
+    default: 'false'
+  
+  release-type:
+    description: 'Release type for release-please'
+    required: false
+    default: 'go'
+  
+  goreleaser-enabled:
+    description: 'Enable GoReleaser'
+    required: false
+    default: 'false'
+  
+  goreleaser-version:
+    description: 'GoReleaser version'
+    required: false
+    default: '~> v2'
+  
+  custom-test-commands:
+    description: 'Additional test commands to run (newline-separated)'
+    required: false
+    default: ''
+  
+  cache-enabled:
+    description: 'Enable Go module and build caching'
+    required: false
+    default: 'true'
+
+outputs:
+  release-created:
+    description: 'Whether a release was created'
+    value: ${{ steps.release.outputs.release_created }}
+  
+  release-tag:
+    description: 'The release tag if created'
+    value: ${{ steps.release.outputs.tag_name }}
+  
+  coverage-file:
+    description: 'Path to coverage file'
+    value: 'coverage.out'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+
+    - name: Cache Go modules
+      if: inputs.cache-enabled == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download Go modules
+      shell: bash
+      run: |
+        go mod download
+        go mod verify
+
+    - name: Run golangci-lint
+      if: inputs.lint-enabled == 'true'
+      uses: golangci/golangci-lint-action@v6
+      with:
+        args: --timeout=${{ inputs.lint-timeout }} --disable=${{ inputs.lint-disable }} --enable=${{ inputs.lint-enable }}
+
+    - name: Run tests
+      if: inputs.test-enabled == 'true'
+      shell: bash
+      run: |
+        # Build test command
+        TEST_CMD="go test -v"
+        
+        if [[ "${{ inputs.test-race }}" == "true" ]]; then
+          TEST_CMD="$TEST_CMD -race"
+        fi
+        
+        if [[ "${{ inputs.test-coverage }}" == "true" ]]; then
+          TEST_CMD="$TEST_CMD -cover -coverprofile=coverage.out"
+        fi
+        
+        TEST_CMD="$TEST_CMD ./..."
+        
+        echo "Running: $TEST_CMD"
+        $TEST_CMD
+
+    - name: Generate coverage report
+      if: inputs.test-enabled == 'true' && inputs.test-coverage == 'true'
+      shell: bash
+      run: |
+        go tool cover -html=coverage.out -o coverage.html
+
+    - name: Run custom test commands
+      if: inputs.custom-test-commands != ''
+      shell: bash
+      run: |
+        IFS=$'\n'
+        for cmd in ${{ inputs.custom-test-commands }}; do
+          echo "Running: $cmd"
+          eval "$cmd"
+        done
+
+    - name: Upload coverage to Codecov
+      if: inputs.codecov-enabled == 'true' && inputs.test-coverage == 'true'
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ inputs.codecov-token }}
+        files: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Upload coverage artifacts
+      if: inputs.test-coverage == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          coverage.out
+          coverage.html
+        retention-days: 30
+
+    - name: Release Please
+      if: inputs.release-enabled == 'true'
+      id: release
+      uses: googleapis/release-please-action@v4
+      with:
+        token: ${{ github.token }}
+        release-type: ${{ inputs.release-type }}
+
+    - name: Setup GoReleaser
+      if: inputs.goreleaser-enabled == 'true' && steps.release.outputs.release_created
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: ${{ inputs.goreleaser-version }}
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
+    - name: Upload release artifacts
+      if: inputs.goreleaser-enabled == 'true' && steps.release.outputs.release_created
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: dist/
+        retention-days: 90
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'

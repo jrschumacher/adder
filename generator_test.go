@@ -129,6 +129,21 @@ command:
 ---`,
 			wantError: true,
 		},
+		{
+			name: "duplicate field names",
+			markdown: `---
+title: Duplicate Fields
+command:
+  name: duplicate
+  arguments:
+    - name: label
+      type: string
+  flags:
+    - name: label
+      type: string
+---`,
+			wantError: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -170,6 +185,102 @@ command:
 				t.Errorf("Unexpected validation error: %v", err)
 			}
 		})
+	}
+}
+
+func TestGenerator_StringEscaping(t *testing.T) {
+	// Create temporary directory for test output
+	tempDir, err := os.MkdirTemp("", "adder-escape-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
+	// Create test input directory with markdown containing quotes
+	inputDir := filepath.Join(tempDir, "input")
+	if err := os.MkdirAll(inputDir, 0755); err != nil {
+		t.Fatalf("Failed to create input dir: %v", err)
+	}
+
+	// Write test markdown file with quoted descriptions
+	testMarkdown := `---
+title: String Escape Test
+command:
+  name: escape-test
+  flags:
+    - name: example
+      description: 'Use format "key=value" for this flag'
+      type: string
+    - name: pattern
+      description: 'Example: pattern="*.go" or pattern="test_*"'
+      type: string
+---
+
+# String Escape Test
+
+Test command with quotes in descriptions.`
+
+	if err := os.WriteFile(filepath.Join(inputDir, "escape.md"), []byte(testMarkdown), 0644); err != nil {
+		t.Fatalf("Failed to write test file: %v", err)
+	}
+
+	// Configure generator
+	outputDir := filepath.Join(tempDir, "output")
+	config := &Config{
+		InputDir:   inputDir,
+		OutputDir:  outputDir,
+		Package:    "testpkg",
+		FileSuffix: "_generated.go",
+	}
+
+	generator := NewGenerator(config)
+
+	// Test generation
+	ctx := context.Background()
+	inputFS := os.DirFS(inputDir)
+	if err := generator.Generate(ctx, inputFS); err != nil {
+		t.Fatalf("Generate failed: %v", err)
+	}
+
+	// Verify output file was created
+	expectedFile := filepath.Join(outputDir, "escape_generated.go")
+	if _, err := os.Stat(expectedFile); os.IsNotExist(err) {
+		t.Errorf("Expected output file %s was not created", expectedFile)
+	}
+
+	// Read and verify content has escaped quotes
+	content, err := os.ReadFile(expectedFile)
+	if err != nil {
+		t.Fatalf("Failed to read output file: %v", err)
+	}
+
+	contentStr := string(content)
+
+	// Check that quotes are properly escaped in comments and strings
+	expectedEscapedStrings := []string{
+		`// Use format \"key=value\" for this flag`,
+		`// Example: pattern=\"*.go\" or pattern=\"test_*\"`,
+		`"Use format \"key=value\" for this flag"`,
+		`"Example: pattern=\"*.go\" or pattern=\"test_*\""`,
+	}
+
+	for _, expected := range expectedEscapedStrings {
+		if !contains(contentStr, expected) {
+			t.Errorf("Generated content missing properly escaped string: %q", expected)
+		}
+	}
+
+	// Check that unescaped quotes don't exist (would cause compilation errors)
+	forbiddenStrings := []string{
+		`"key=value"`,  // in comment
+		`"*.go"`,       // in comment  
+		`"test_*"`,     // in comment
+	}
+
+	for _, forbidden := range forbiddenStrings {
+		if contains(contentStr, forbidden) {
+			t.Errorf("Generated content contains unescaped quotes that would cause compilation errors: %q", forbidden)
+		}
 	}
 }
 

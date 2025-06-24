@@ -38,7 +38,7 @@ const commandTemplate = `
 // {{$structName}}Arguments represents the arguments for the {{$cmd.Name}} command
 type {{$structName}}Arguments struct {
 	{{- range $cmd.Arguments}}
-	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Required}} validate:"required"{{end}}` + "`" + `{{if .Description}} // {{.Description}}{{end}}
+	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Required}} validate:"required"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
 	{{- end}}
 }
 {{- end}}
@@ -47,7 +47,7 @@ type {{$structName}}Arguments struct {
 // {{$structName}}Flags represents the flags for the {{$cmd.Name}} command
 type {{$structName}}Flags struct {
 	{{- range $cmd.Flags}}
-	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{.Description}}{{end}}
+	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
 	{{- end}}
 }
 {{- end}}
@@ -89,9 +89,9 @@ func {{$functionName}}(handler {{$handlerName}}) *cobra.Command {
 	// Register flags
 	{{- range $cmd.Flags}}
 	{{- if .Shorthand}}
-	cmd.Flags().{{.GetCobraFlagMethodP}}("{{.Name}}", "{{.Shorthand}}", {{.GetDefaultValue}}, "{{.Description}}")
+	cmd.Flags().{{.GetCobraFlagMethodP}}("{{.Name}}", "{{.Shorthand}}", {{.GetDefaultValue}}, "{{escapeString .Description}}")
 	{{- else}}
-	cmd.Flags().{{.GetCobraFlagMethod}}("{{.Name}}", {{.GetDefaultValue}}, "{{.Description}}")
+	cmd.Flags().{{.GetCobraFlagMethod}}("{{.Name}}", {{.GetDefaultValue}}, "{{escapeString .Description}}")
 	{{- end}}
 	{{- if .Required}}
 	cmd.MarkFlagRequired("{{.Name}}")
@@ -194,6 +194,10 @@ func TemplateFunctions() template.FuncMap {
 				return enum[0] + " or " + enum[1]
 			}
 			return strings.Join(enum[:len(enum)-1], ", ") + ", or " + enum[len(enum)-1]
+		},
+		"escapeString": func(s string) string {
+			// Escape quotes in strings for Go code generation
+			return strings.ReplaceAll(s, `"`, `\"`)
 		},
 	}
 }
