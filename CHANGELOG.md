@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/jrschumacher/adder/compare/v0.1.1...v0.2.0) (2025-06-25)
+
+
+### Features
+
+* enhance ux and resolve defects ([#8](https://github.com/jrschumacher/adder/issues/8)) ([c5ffdd9](https://github.com/jrschumacher/adder/commit/c5ffdd91eb3251c00c3ade3eb586542731195aa3))
+
 ## [0.1.1](https://github.com/jrschumacher/adder/compare/v0.1.0...v0.1.1) (2025-06-24)
 
 
