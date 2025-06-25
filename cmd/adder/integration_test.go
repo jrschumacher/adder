@@ -49,10 +49,11 @@ This is a test command for CLI integration testing.`
 	handler := NewGenerateHandler()
 	req := &generated.GenerateRequest{
 		Flags: generated.GenerateRequestFlags{
-			Input:   inputDir,
-			Output:  outputDir,
-			Package: "testcli",
-			Suffix:  "_generated.go",
+			BinaryName: "testcli",
+			Input:      inputDir,
+			Output:     outputDir,
+			Package:    "testcli",
+			Suffix:     "_generated.go",
 		},
 	}
 
@@ -164,6 +165,7 @@ A complex test command with arguments and flags.`,
 
 	// Set up command arguments
 	generateCmd.SetArgs([]string{
+		"--binary-name", "e2etest",
 		"--input", inputDir,
 		"--output", outputDir,
 		"--package", "e2etest",
@@ -219,10 +221,11 @@ func TestCLI_ErrorHandling(t *testing.T) {
 			name: "nonexistent input directory",
 			req: &generated.GenerateRequest{
 				Flags: generated.GenerateRequestFlags{
-					Input:   "/nonexistent/directory",
-					Output:  "/tmp/test-output",
-					Package: "test",
-					Suffix:  "_generated.go",
+					BinaryName: "test",
+					Input:      "/nonexistent/directory",
+					Output:     "/tmp/test-output",
+					Package:    "test",
+					Suffix:     "_generated.go",
 				},
 			},
 			expectError: true,
@@ -231,10 +234,11 @@ func TestCLI_ErrorHandling(t *testing.T) {
 			name: "empty package name",
 			req: &generated.GenerateRequest{
 				Flags: generated.GenerateRequestFlags{
-					Input:   "testdata",
-					Output:  "/tmp/test-output",
-					Package: "",
-					Suffix:  "_generated.go",
+					BinaryName: "test",
+					Input:      "testdata",
+					Output:     "/tmp/test-output",
+					Package:    "",
+					Suffix:     "_generated.go",
 				},
 			},
 			expectError: false, // Should use default

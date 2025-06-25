@@ -1,6 +1,7 @@
 package adder
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -244,6 +245,278 @@ func TestFlag_GetValidationTag(t *testing.T) {
 			got := tt.flag.GetValidationTag()
 			if got != tt.want {
 				t.Errorf("Flag.GetValidationTag() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParser_DuplicateFieldDetection(t *testing.T) {
+	parser := NewParser(&Config{})
+
+	tests := []struct {
+		name           string
+		content        string
+		filePath       string
+		wantErr        bool
+		expectedErrMsg string
+	}{
+		{
+			name: "duplicate argument names",
+			content: `---
+title: Duplicate Args
+command:
+  name: test
+  arguments:
+    - name: label
+      type: string
+    - name: label
+      type: int
+---`,
+			filePath:       "test.md",
+			wantErr:        true,
+			expectedErrMsg: "file test.md: duplicate field name 'Label' - argument 'label' conflicts with argument 'label'",
+		},
+		{
+			name: "duplicate flag names",
+			content: `---
+title: Duplicate Flags
+command:
+  name: test
+  flags:
+    - name: verbose
+      type: bool
+    - name: verbose
+      type: string
+---`,
+			filePath:       "test.md",
+			wantErr:        true,
+			expectedErrMsg: "file test.md: duplicate field name 'Verbose' - flag 'verbose' conflicts with flag 'verbose'",
+		},
+		{
+			name: "argument conflicts with flag",
+			content: `---
+title: Arg Flag Conflict
+command:
+  name: test
+  arguments:
+    - name: output
+      type: string
+  flags:
+    - name: output
+      type: string
+---`,
+			filePath:       "test.md",
+			wantErr:        true,
+			expectedErrMsg: "file test.md: duplicate field name 'Output' - flag 'output' conflicts with argument 'output'",
+		},
+		{
+			name: "flag conflicts with argument",
+			content: `---
+title: Flag Arg Conflict
+command:
+  name: test
+  arguments:
+    - name: input
+      type: string
+  flags:
+    - name: input
+      type: string
+---`,
+			filePath:       "test.md",
+			wantErr:        true,
+			expectedErrMsg: "file test.md: duplicate field name 'Input' - flag 'input' conflicts with argument 'input'",
+		},
+		{
+			name: "similar names that are actually different",
+			content: `---
+title: Similar Names
+command:
+  name: test
+  arguments:
+    - name: file-name
+      type: string
+  flags:
+    - name: fileName
+      type: string
+---`,
+			filePath: "test.md",
+			wantErr:  false, // These are actually different: "FileName" vs "Filename"
+		},
+		{
+			name: "underscore vs dash conflicts",
+			content: `---
+title: Separator Conflict
+command:
+  name: test
+  arguments:
+    - name: user_name
+      type: string
+  flags:
+    - name: user-name
+      type: string
+---`,
+			filePath:       "test.md",
+			wantErr:        true,
+			expectedErrMsg: "file test.md: duplicate field name 'UserName' - flag 'user-name' conflicts with argument 'user_name'",
+		},
+		{
+			name: "no duplicates - different names",
+			content: `---
+title: No Conflict
+command:
+  name: test
+  arguments:
+    - name: input
+      type: string
+  flags:
+    - name: output
+      type: string
+    - name: verbose
+      type: bool
+---`,
+			filePath: "test.md",
+			wantErr:  false,
+		},
+		{
+			name: "no duplicates - similar but different",
+			content: `---
+title: Similar Names
+command:
+  name: test
+  arguments:
+    - name: file
+      type: string
+  flags:
+    - name: filename
+      type: string
+    - name: files
+      type: stringArray
+---`,
+			filePath: "test.md",
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd, err := parser.ParseContent(tt.content, tt.filePath)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("ParseContent() expected error but got none")
+					return
+				}
+				if !strings.Contains(err.Error(), tt.expectedErrMsg) {
+					t.Errorf("ParseContent() error = %q, want to contain %q", err.Error(), tt.expectedErrMsg)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ParseContent() unexpected error = %v", err)
+					return
+				}
+				if cmd == nil {
+					t.Errorf("ParseContent() returned nil command when expecting success")
+				}
+			}
+		})
+	}
+}
+
+func TestParser_ValidationErrorMessages(t *testing.T) {
+	parser := NewParser(&Config{})
+
+	tests := []struct {
+		name           string
+		content        string
+		filePath       string
+		expectedErrMsg string
+	}{
+		{
+			name: "empty command name returns nil",
+			content: `---
+title: Test Command
+command:
+  name: ""
+  flags:
+    - name: flag
+      type: string
+---`,
+			filePath:       "empty-name.md",
+			expectedErrMsg: "", // This should return nil, nil, not an error
+		},
+		{
+			name: "missing command title",
+			content: `---
+command:
+  name: test
+---`,
+			filePath:       "missing-title.md",
+			expectedErrMsg: "file missing-title.md: command title is required",
+		},
+		{
+			name: "enum on non-string flag",
+			content: `---
+title: Invalid Enum
+command:
+  name: test
+  flags:
+    - name: level
+      type: int
+      enum:
+        - 1
+        - 2
+---`,
+			filePath:       "invalid-enum.md",
+			expectedErrMsg: "file invalid-enum.md: flag level: enum is only supported for string flags",
+		},
+		{
+			name: "missing argument name",
+			content: `---
+title: Missing Arg Name
+command:
+  name: test
+  arguments:
+    - type: string
+---`,
+			filePath:       "missing-arg.md",
+			expectedErrMsg: "file missing-arg.md: argument 0: name is required",
+		},
+		{
+			name: "missing flag name",
+			content: `---
+title: Missing Flag Name
+command:
+  name: test
+  flags:
+    - type: string
+---`,
+			filePath:       "missing-flag.md",
+			expectedErrMsg: "file missing-flag.md: flag 0: name is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd, err := parser.ParseContent(tt.content, tt.filePath)
+
+			if tt.expectedErrMsg == "" {
+				// Special case: expect nil command and no error
+				if cmd != nil {
+					t.Errorf("ParseContent() expected nil command but got %v", cmd)
+				}
+				if err != nil {
+					t.Errorf("ParseContent() expected no error but got %v", err)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Errorf("ParseContent() expected error but got none")
+				return
+			}
+
+			if !strings.Contains(err.Error(), tt.expectedErrMsg) {
+				t.Errorf("ParseContent() error = %q, want to contain %q", err.Error(), tt.expectedErrMsg)
 			}
 		})
 	}

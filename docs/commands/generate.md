@@ -3,10 +3,14 @@ title: Generate CLI commands from markdown documentation
 command:
   name: generate
   flags:
+    - name: binary-name
+      shorthand: b
+      description: Name of the binary/CLI (required unless set in config)
+      type: string
     - name: input
       shorthand: i
       description: Input directory containing markdown files
-      default: docs/man
+      default: docs/commands
       type: string
     - name: output
       shorthand: o
@@ -21,6 +25,19 @@ command:
     - name: suffix
       description: File suffix for generated files
       default: _generated.go
+      type: string
+    - name: validate
+      description: Validate documentation without generating files
+      default: false
+      type: bool
+    - name: force
+      shorthand: f
+      description: Force regeneration of all files regardless of modification time
+      default: false
+      type: bool
+    - name: package-strategy
+      description: Package naming strategy (single, directory, path)
+      default: directory
       type: string
 ---
 

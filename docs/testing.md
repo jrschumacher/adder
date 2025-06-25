@@ -70,10 +70,13 @@ Complete workflow tests that validate the entire process:
 
 ### Testing Handlers
 
+Using the adder testing utilities:
+
 ```go
 func TestMyHandler_HandleCommand(t *testing.T) {
+    tu := adder.NewTestingUtils()
     handler := NewMyHandler()
-    cmd := &cobra.Command{}
+    cmd := tu.NewMockCobraCommand("my-command")
     
     req := &generated.MyRequest{
         Arguments: generated.MyRequestArguments{
@@ -85,10 +88,106 @@ func TestMyHandler_HandleCommand(t *testing.T) {
     }
     
     err := handler.HandleCommand(cmd, req)
-    if err != nil {
-        t.Fatalf("Handler failed: %v", err)
+    tu.AssertNoError(t, err)
+}
+```
+
+Using request builders for complex requests:
+
+```go
+func TestMyHandler_WithBuilder(t *testing.T) {
+    tu := adder.NewTestingUtils()
+    
+    // Use the generic builder
+    builder := adder.NewRequestBuilder().
+        WithFlag("input", "testdata/commands").
+        WithFlag("output", "testdata/output").
+        WithFlag("validate", true).
+        WithArg("name", "test-arg")
+    
+    flags := builder.BuildFlags()
+    args := builder.BuildArgs()
+    
+    req := &generated.MyRequest{
+        Flags: generated.MyRequestFlags{
+            Input: flags["input"].(string),
+            Output: flags["output"].(string),
+            Validate: flags["validate"].(bool),
+        },
+        Arguments: generated.MyRequestArguments{
+            Name: args["name"].(string),
+        },
+    }
+    
+    handler := NewMyHandler()
+    cmd := tu.NewMockCobraCommand("my-command")
+    err := handler.HandleMyCommand(cmd, req)
+    tu.AssertNoError(t, err)
+}
+```
+
+Creating type-safe builders for specific commands:
+
+```go
+// Create a builder for your specific request type
+type MyRequestBuilder struct {
+    input    string
+    output   string
+    validate bool
+    name     string
+}
+
+func NewMyRequestBuilder() *MyRequestBuilder {
+    return &MyRequestBuilder{
+        input:  "docs/commands",
+        output: "generated",
     }
 }
+
+func (b *MyRequestBuilder) WithInput(input string) *MyRequestBuilder {
+    b.input = input
+    return b
+}
+
+func (b *MyRequestBuilder) WithValidate(validate bool) *MyRequestBuilder {
+    b.validate = validate
+    return b
+}
+
+func (b *MyRequestBuilder) WithName(name string) *MyRequestBuilder {
+    b.name = name
+    return b
+}
+
+func (b *MyRequestBuilder) Build() *generated.MyRequest {
+    return &generated.MyRequest{
+        Flags: generated.MyRequestFlags{
+            Input:    b.input,
+            Output:   b.output,
+            Validate: b.validate,
+        },
+        Arguments: generated.MyRequestArguments{
+            Name: b.name,
+        },
+    }
+}
+
+// Usage in tests:
+func TestWithTypeSeafeBuilder(t *testing.T) {
+    tu := adder.NewTestingUtils()
+    
+    req := NewMyRequestBuilder().
+        WithInput("testdata/commands").
+        WithValidate(true).
+        WithName("test-name").
+        Build()
+    
+    handler := NewMyHandler()
+    cmd := tu.NewMockCobraCommand("my-command")
+    err := handler.HandleMyCommand(cmd, req)
+    tu.AssertNoError(t, err)
+}
+```
 ```
 
 ### Testing CLI Commands

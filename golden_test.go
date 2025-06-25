@@ -25,7 +25,7 @@ func TestGenerator_GoldenFiles(t *testing.T) {
 		InputDir:   "testdata/golden",
 		OutputDir:  outputDir,
 		Package:    "testpkg",
-		FileSuffix: "_generated.go",
+		GeneratedFileSuffix: "_generated.go",
 	}
 
 	generator := New(config)
@@ -111,7 +111,7 @@ func TestGenerator_UpdateGoldenFiles(t *testing.T) {
 		InputDir:   "testdata/golden",
 		OutputDir:  outputDir,
 		Package:    "testpkg",
-		FileSuffix: "_generated.go",
+		GeneratedFileSuffix: "_generated.go",
 	}
 
 	generator := New(config)

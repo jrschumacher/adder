@@ -39,9 +39,23 @@ go install github.com/jrschumacher/adder/cmd/adder@latest
 ```
 
 
-### 2. Define Command
+### 2. Configure Project
 
-Create `docs/man/hello.md`:
+Create `.adder.yaml`:
+
+```yaml
+binary_name: myapp              # Required: name of your CLI binary
+input: docs/commands            # Default: docs/commands  
+output: generated               # Default: generated
+package: generated              # Default: generated
+suffix: _generated.go           # Default: _generated.go
+package_strategy: directory     # Default: directory
+index_format: directory         # Default: directory
+```
+
+### 3. Define Command
+
+Create `docs/commands/hello.md`:
 
 ```yaml
 ---
@@ -64,13 +78,14 @@ command:
 Greet someone with a friendly hello message.
 ```
 
-### 3. Generate Code
+### 4. Generate Code
 
 ```bash
-adder generate -i docs/man -o generated -p generated
+adder generate
+# Or with flags: adder generate -i docs/commands -o generated -p generated
 ```
 
-### 4. Implement Handler
+### 5. Implement Handler
 
 ```go
 func (h *HelloHandler) HandleHello(cmd *cobra.Command, req *generated.HelloRequest) error {
@@ -83,7 +98,7 @@ func (h *HelloHandler) HandleHello(cmd *cobra.Command, req *generated.HelloReque
 }
 ```
 
-### 5. Wire It Up
+### 6. Wire It Up
 
 ```go
 handler := &HelloHandler{}
@@ -129,6 +144,32 @@ docs/man/              generated/
 ```
 
 This prevents naming conflicts between commands like `auth create` and `policy create`.
+
+## ⚙️ Configuration
+
+Create `.adder.yaml` in your project root:
+
+```yaml
+# Required: Name of your CLI binary (used to detect root command)
+binary_name: myapp
+
+# Optional: Input/output directories (can be overridden with flags)
+input: docs/commands
+output: generated
+package: generated
+suffix: _generated.go
+
+# Optional: Package naming strategy
+package_strategy: directory  # single, directory, path
+
+# Optional: Index file format for subcommands
+index_format: directory      # directory, index, _index, hugo
+```
+
+**Root Command Detection:**
+- The parser looks for `{binary_name}.md` in the input directory
+- This file becomes your CLI's root command
+- Example: `binary_name: myapp` → looks for `myapp.md`
 
 ## 🎯 Key Benefits
 
