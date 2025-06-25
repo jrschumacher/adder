@@ -13,10 +13,12 @@ var (
 	version = "dev"
 	commit  = "unknown"
 	date    = "unknown"
+
+	rootCmd *cobra.Command
 )
 
 func main() {
-	rootCmd := &cobra.Command{
+	rootCmd = &cobra.Command{
 		Use:   "adder",
 		Short: "A documentation-driven CLI generator",
 		Long: `Adder generates type-safe CLI commands from markdown documentation.
@@ -28,15 +30,10 @@ It processes markdown files with YAML frontmatter to create:
 - Argument and flag validation`,
 	}
 
-	// Create handlers
-	generateHandler := NewGenerateHandler()
-	versionHandler := NewVersionHandler()
-	initHandler := NewInitHandler()
-
-	// Add generated commands
-	rootCmd.AddCommand(generated.NewGenerateCommand(generateHandler))
-	rootCmd.AddCommand(generated.NewVersionCommand(versionHandler))
-	rootCmd.AddCommand(generated.NewInitCommand(initHandler))
+	// Add generated commands with handler functions
+	rootCmd.AddCommand(generated.NewGenerateCommand(generateCmd))
+	rootCmd.AddCommand(generated.NewVersionCommand(versionCmd))
+	rootCmd.AddCommand(generated.NewInitCommand(initCmd))
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
