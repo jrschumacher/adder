@@ -17,12 +17,10 @@ type SimpleRequest struct {
 	Flags SimpleRequestFlags `json:"flags"`
 }
 
-// SimpleHandler defines the interface for handling simple commands
-type SimpleHandler interface {
-	HandleSimple(cmd *cobra.Command, req *SimpleRequest) error
-}
+// SimpleHandler defines the function type for handling simple commands
+type SimpleHandler func(cmd *cobra.Command, req *SimpleRequest) error
 
-// NewSimpleCommand creates a new simple command with the provided handler
+// NewSimpleCommand creates a new simple command with the provided handler function
 func NewSimpleCommand(handler SimpleHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "simple",
@@ -50,5 +48,5 @@ func runSimple(cmd *cobra.Command, args []string, handler SimpleHandler) error {
 	}
 
 	// Call handler
-	return handler.HandleSimple(cmd, req)
+	return handler(cmd, req)
 }

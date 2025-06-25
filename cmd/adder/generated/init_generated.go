@@ -18,12 +18,10 @@ type InitRequest struct {
 	Flags InitRequestFlags `json:"flags"`
 }
 
-// InitHandler defines the interface for handling init commands
-type InitHandler interface {
-	HandleInit(cmd *cobra.Command, req *InitRequest) error
-}
+// InitHandler defines the function type for handling init commands
+type InitHandler func(cmd *cobra.Command, req *InitRequest) error
 
-// NewInitCommand creates a new init command with the provided handler
+// NewInitCommand creates a new init command with the provided handler function
 func NewInitCommand(handler InitHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init",
@@ -54,5 +52,5 @@ func runInit(cmd *cobra.Command, args []string, handler InitHandler) error {
 	}
 
 	// Call handler
-	return handler.HandleInit(cmd, req)
+	return handler(cmd, req)
 }

@@ -49,6 +49,17 @@ suffix: _generated.go       # File suffix for generated files
 - Parser looks for `{binary_name}.md` in input directory
 - Example: `binary_name: adder` → looks for `adder.md`
 
+**Package Strategy Options:**
+- `single`: All commands in one package (simple, but can cause naming conflicts)
+- `directory`: Package per directory (default, good balance)
+- `path`: Unique package per file path (maximum uniqueness)
+
+**Index Format Options:**
+- `directory`: Look for `{dirname}.md` or `index.md` (default)
+- `index`: Look for `index.md` only
+- `_index`: Look for `_index.md` only (Hugo-style)
+- `hugo`: Alias for `_index`
+
 ### Self-Dogfooding Commands
 
 Adder uses itself to generate its own CLI commands:

@@ -12,12 +12,10 @@ import (
 type AdderRequest struct {
 }
 
-// AdderHandler defines the interface for handling adder commands
-type AdderHandler interface {
-	HandleAdder(cmd *cobra.Command, req *AdderRequest) error
-}
+// AdderHandler defines the function type for handling adder commands
+type AdderHandler func(cmd *cobra.Command, req *AdderRequest) error
 
-// NewAdderCommand creates a new adder command with the provided handler
+// NewAdderCommand creates a new adder command with the provided handler function
 func NewAdderCommand(handler AdderHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "adder",
@@ -40,5 +38,5 @@ func runAdder(cmd *cobra.Command, args []string, handler AdderHandler) error {
 	}
 
 	// Call handler
-	return handler.HandleAdder(cmd, req)
+	return handler(cmd, req)
 }

@@ -281,6 +281,24 @@ func (c *Config) GetPackageName(filePath string) string {
 	case "path":
 		// Use full path including filename for maximum uniqueness
 		// e.g., "auth/login.md" -> "auth_login"
+		// Special case: Index files should use directory name only
+		dir := filepath.Dir(filePath)
+		filename := filepath.Base(filePath)
+		
+		if dir != "." && c.IsIndexFile(filename, filepath.Base(dir)) {
+			// This is an index file - use directory name only (like directory strategy)
+			packageName := strings.ReplaceAll(dir, "/", "_")
+			packageName = strings.ReplaceAll(packageName, "-", "_")
+			
+			// Ensure it starts with a letter
+			if len(packageName) > 0 && !isLetter(packageName[0]) {
+				packageName = "pkg_" + packageName
+			}
+			
+			return packageName
+		}
+		
+		// Regular file - use full path including filename
 		fullPath := strings.TrimSuffix(filePath, filepath.Ext(filePath))
 		packageName := strings.ReplaceAll(fullPath, "/", "_")
 		packageName = strings.ReplaceAll(packageName, "-", "_")

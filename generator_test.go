@@ -84,9 +84,8 @@ This is a test command for unit testing.`
 		"type TestRequestArguments struct",
 		"type TestRequestFlags struct",
 		"type TestRequest struct",
-		"type TestHandler interface",
+		"type TestHandler func(cmd *cobra.Command, req *TestRequest) error",
 		"func NewTestCommand",
-		"HandleTest(cmd *cobra.Command, req *TestRequest) error",
 	}
 
 	for _, expected := range expectedStrings {

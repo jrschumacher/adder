@@ -19,9 +19,10 @@ The hello command is generated from markdown documentation
 in docs/man/hello.md and demonstrates type-safe CLI generation.`,
 	}
 
-	// Create handler and add generated command
-	helloHandler := NewHelloHandler()
-	helloCmd := generated.NewHelloCommand(helloHandler)
+	// Create command with function-based handler
+	helloCmd := generated.NewHelloCommand(func(cmd *cobra.Command, req *generated.HelloRequest) error {
+		return handleHello(cmd, req)
+	})
 	rootCmd.AddCommand(helloCmd)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -30,16 +31,8 @@ in docs/man/hello.md and demonstrates type-safe CLI generation.`,
 	}
 }
 
-// HelloHandler implements the generated HelloHandler interface
-type HelloHandler struct{}
-
-// NewHelloHandler creates a new HelloHandler
-func NewHelloHandler() *HelloHandler {
-	return &HelloHandler{}
-}
-
-// HandleHello implements the business logic for the hello command
-func (h *HelloHandler) HandleHello(cmd *cobra.Command, req *generated.HelloRequest) error {
+// handleHello implements the business logic for the hello command
+func handleHello(cmd *cobra.Command, req *generated.HelloRequest) error {
 	greeting := fmt.Sprintf("Hello, %s!", req.Arguments.Name)
 
 	if req.Flags.Capitalize {
@@ -47,7 +40,7 @@ func (h *HelloHandler) HandleHello(cmd *cobra.Command, req *generated.HelloReque
 	}
 
 	// Apply ASCII art styling
-	styledGreeting := h.applyAsciiArt(greeting, req.Flags.AsciiArt)
+	styledGreeting := applyAsciiArt(greeting, req.Flags.AsciiArt)
 
 	// Print the greeting the specified number of times
 	for i := 0; i < req.Flags.Repeat; i++ {
@@ -61,7 +54,7 @@ func (h *HelloHandler) HandleHello(cmd *cobra.Command, req *generated.HelloReque
 }
 
 // applyAsciiArt applies the specified ASCII art style to the text
-func (h *HelloHandler) applyAsciiArt(text, style string) string {
+func applyAsciiArt(text, style string) string {
 	switch style {
 	case "small":
 		return text

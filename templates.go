@@ -62,12 +62,10 @@ type {{$structName}} struct {
 	{{- end}}
 }
 
-// {{$handlerName}} defines the interface for handling {{$cmd.Name}} commands
-type {{$handlerName}} interface {
-	{{$methodName}}(cmd *cobra.Command, req *{{$structName}}) error
-}
+// {{$handlerName}} defines the function type for handling {{$cmd.Name}} commands
+type {{$handlerName}} func(cmd *cobra.Command, req *{{$structName}}) error
 
-// {{$functionName}} creates a new {{$cmd.Name}} command with the provided handler
+// {{$functionName}} creates a new {{$cmd.Name}} command with the provided handler function
 func {{$functionName}}(handler {{$handlerName}}) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "{{cleanCommandName $cmd.Name}}{{range $cmd.Arguments}} [{{.Name}}]{{end}}",
@@ -146,7 +144,7 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 	}
 
 	// Call handler
-	return handler.{{$methodName}}(cmd, req)
+	return handler(cmd, req)
 }
 `
 

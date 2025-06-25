@@ -45,8 +45,7 @@ This is a test command for CLI integration testing.`
 		t.Fatalf("Failed to write test file: %v", err)
 	}
 
-	// Create handler and request
-	handler := NewGenerateHandler()
+	// Create request
 	req := &generated.GenerateRequest{
 		Flags: generated.GenerateRequestFlags{
 			BinaryName: "testcli",
@@ -61,9 +60,9 @@ This is a test command for CLI integration testing.`
 	cmd := &cobra.Command{}
 
 	// Test the handler
-	err = handler.HandleGenerate(cmd, req)
+	err = generateCmd(cmd, req)
 	if err != nil {
-		t.Fatalf("HandleGenerate failed: %v", err)
+		t.Fatalf("GenerateCMD failed: %v", err)
 	}
 
 	// Verify output file was created
@@ -88,17 +87,16 @@ This is a test command for CLI integration testing.`
 }
 
 func TestVersionHandler_HandleVersion(t *testing.T) {
-	// Create handler
-	handler := NewVersionHandler()
+	// Create request
 	req := &generated.VersionRequest{}
 
 	// Create mock command
 	cmd := &cobra.Command{}
 
 	// Test the handler
-	err := handler.HandleVersion(cmd, req)
+	err := versionCmd(cmd, req)
 	if err != nil {
-		t.Fatalf("HandleVersion failed: %v", err)
+		t.Fatalf("VersionCMD failed: %v", err)
 	}
 
 	// Note: This test would be improved by injecting output writers
@@ -160,8 +158,7 @@ A complex test command with arguments and flags.`,
 	}
 
 	// Create and execute generate command
-	generateHandler := NewGenerateHandler()
-	generateCmd := generated.NewGenerateCommand(generateHandler)
+	generateCmd := generated.NewGenerateCommand(generateCmd)
 
 	// Set up command arguments
 	generateCmd.SetArgs([]string{
@@ -201,7 +198,7 @@ A complex test command with arguments and flags.`,
 		"ComplexRequestFlags",
 		"ComplexRequest",
 		"ComplexHandler",
-		"HandleComplex",
+		"type ComplexHandler func(cmd *cobra.Command, req *ComplexRequest) error",
 	}
 
 	for _, expected := range expectedInComplex {
@@ -245,12 +242,11 @@ func TestCLI_ErrorHandling(t *testing.T) {
 		},
 	}
 
-	handler := NewGenerateHandler()
 	cmd := &cobra.Command{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := handler.HandleGenerate(cmd, tt.req)
+			err := generateCmd(cmd, tt.req)
 
 			if tt.expectError && err == nil {
 				t.Errorf("Expected error but got none")
