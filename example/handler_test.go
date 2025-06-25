@@ -69,12 +69,11 @@ func TestHelloHandler_HandleHello(t *testing.T) {
 		},
 	}
 
-	handler := NewHelloHandler()
 	cmd := &cobra.Command{} // Mock command for testing
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := handler.HandleHello(cmd, tt.req)
+			err := handleHello(cmd, tt.req)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HelloHandler.HandleHello() error = %v, wantErr %v", err, tt.wantErr)
@@ -91,11 +90,10 @@ func TestHelloHandler_HandleHello(t *testing.T) {
 
 func TestHelloHandler_Integration(t *testing.T) {
 	// This test demonstrates full integration testing
-	// Create handler
-	handler := NewHelloHandler()
-
-	// Create command using generated interface
-	cmd := generated.NewHelloCommand(handler)
+	// Create command using generated function
+	cmd := generated.NewHelloCommand(func(cmd *cobra.Command, req *generated.HelloRequest) error {
+		return handleHello(cmd, req)
+	})
 
 	// Test various argument combinations
 	testCases := []struct {
@@ -156,7 +154,6 @@ func TestHelloHandler_WithMockDependency(t *testing.T) {
 	// In a real scenario, you might inject the mock into your handler
 	// handler := NewHelloHandlerWithGreeter(mock)
 
-	handler := NewHelloHandler()
 	cmd := &cobra.Command{}
 
 	req := &generated.HelloRequest{
@@ -169,7 +166,7 @@ func TestHelloHandler_WithMockDependency(t *testing.T) {
 		},
 	}
 
-	err := handler.HandleHello(cmd, req)
+	err := handleHello(cmd, req)
 	if err != nil {
 		t.Fatalf("HandleHello failed: %v", err)
 	}
