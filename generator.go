@@ -12,9 +12,11 @@ import (
 
 // Generator handles code generation from parsed commands
 type Generator struct {
-	config   *Config
-	parser   *Parser
-	commands []*Command
+	config       *Config
+	parser       *Parser
+	commands     []*Command
+	force        bool // Force regeneration of all files
+	skippedFiles int  // Number of files skipped during incremental generation
 }
 
 // NewGenerator creates a new generator instance
@@ -39,11 +41,34 @@ func (g *Generator) Generate(_ context.Context, inputFS fs.FS) error {
 	fileGroups := g.groupCommandsByFile()
 
 	// Generate code for each file
+	skippedCount := 0
 	for filename, cmds := range fileGroups {
+		// Check if any source file for this output file needs regeneration
+		needsRegeneration := false
+		for _, cmd := range cmds {
+			sourceFile := g.getSourceFilePath(cmd)
+			should, err := g.shouldRegenerateFile(sourceFile, filename)
+			if err != nil {
+				return fmt.Errorf("checking if %s needs regeneration: %w", filename, err)
+			}
+			if should {
+				needsRegeneration = true
+				break
+			}
+		}
+
+		if !needsRegeneration {
+			skippedCount++
+			continue
+		}
+
 		if err := g.generateFile(filename, cmds); err != nil {
 			return fmt.Errorf("generating %s: %w", filename, err)
 		}
 	}
+
+	// Update stats to include skipped files
+	g.skippedFiles = skippedCount
 
 	return nil
 }
@@ -69,7 +94,7 @@ func (g *Generator) getOutputFilename(cmd *Command) string {
 	dir := filepath.Dir(cmd.FilePath)
 	base := filepath.Base(cmd.FilePath)
 	nameWithoutExt := base[:len(base)-len(filepath.Ext(base))]
-	filename := nameWithoutExt + g.config.FileSuffix
+	filename := nameWithoutExt + g.config.GeneratedFileSuffix
 
 	// Handle root directory case
 	if dir == "." {
@@ -118,12 +143,19 @@ func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 		}
 	}
 
+	// Determine package name based on the first command's file path
+	// All commands in the same file should have the same package name
+	packageName := g.config.Package
+	if len(commands) > 0 {
+		packageName = g.config.GetPackageName(commands[0].FilePath)
+	}
+
 	// Generate package header
 	packageData := struct {
 		Package  string
 		NeedsFmt bool
 	}{
-		Package:  g.config.Package,
+		Package:  packageName,
 		NeedsFmt: needsFmt,
 	}
 
@@ -219,6 +251,7 @@ func (g *Generator) ValidateCommands() error {
 func (g *Generator) GetStats() map[string]int {
 	stats := make(map[string]int)
 	stats["total_commands"] = len(g.commands)
+	stats["skipped_files"] = g.skippedFiles
 
 	for _, cmd := range g.commands {
 		stats["total_arguments"] += len(cmd.Arguments)
@@ -226,4 +259,39 @@ func (g *Generator) GetStats() map[string]int {
 	}
 
 	return stats
+}
+
+// SetForceRegeneration sets whether to force regeneration of all files
+func (g *Generator) SetForceRegeneration(force bool) {
+	g.force = force
+}
+
+// shouldRegenerateFile checks if a file needs to be regenerated based on modification times
+func (g *Generator) shouldRegenerateFile(sourceFile, outputFile string) (bool, error) {
+	if g.force {
+		return true, nil
+	}
+
+	// Check if output file exists
+	outputInfo, err := os.Stat(outputFile)
+	if os.IsNotExist(err) {
+		return true, nil // Output doesn't exist, need to generate
+	}
+	if err != nil {
+		return false, fmt.Errorf("checking output file %s: %w", outputFile, err)
+	}
+
+	// Check source file modification time
+	sourceInfo, err := os.Stat(sourceFile)
+	if err != nil {
+		return false, fmt.Errorf("checking source file %s: %w", sourceFile, err)
+	}
+
+	// Regenerate if source is newer than output
+	return sourceInfo.ModTime().After(outputInfo.ModTime()), nil
+}
+
+// getSourceFilePath returns the full path to the source markdown file
+func (g *Generator) getSourceFilePath(cmd *Command) string {
+	return filepath.Join(g.config.InputDir, cmd.FilePath)
 }

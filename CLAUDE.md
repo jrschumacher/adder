@@ -21,6 +21,8 @@ go build -o adder ./cmd/adder                 # Build the CLI tool
 go build -o hello-example ./example           # Build the example
 
 # Code Generation (after building)
+./adder generate                              # Uses .adder.yaml config
+./adder generate --binary-name myapp          # Override binary name
 ./adder generate --input docs/man --output generated --package generated
 
 # Linting
@@ -29,6 +31,23 @@ golangci-lint run --timeout=10m --disable=forbidigo,gosec,mnd,nilnil --enable=er
 # Run a single test
 go test -v -run TestName ./path/to/package
 ```
+
+## Configuration
+
+The project uses `.adder.yaml` for configuration:
+
+```yaml
+binary_name: adder          # Required: CLI binary name (detects root command)
+input: docs/commands        # Input directory for markdown files
+output: cmd/adder/generated # Output directory for generated Go files
+package: generated          # Go package name for generated files
+suffix: _generated.go       # File suffix for generated files
+```
+
+**Root Command Detection:**
+- `binary_name` is required and determines root command file
+- Parser looks for `{binary_name}.md` in input directory
+- Example: `binary_name: adder` → looks for `adder.md`
 
 ### Self-Dogfooding Commands
 

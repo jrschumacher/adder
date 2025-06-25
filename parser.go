@@ -3,10 +3,17 @@ package adder
 import (
 	"fmt"
 	"io/fs"
+	"path/filepath"
 	"strings"
 
-	"github.com/adrg/frontmatter"
+	"gopkg.in/yaml.v2"
 )
+
+// fieldSource tracks where a field name originated from for better error messages
+type fieldSource struct {
+	fieldType    string // "argument" or "flag"
+	originalName string // original name before conversion to PascalCase
+}
 
 // Parser handles parsing markdown files with YAML frontmatter
 type Parser struct {
@@ -34,9 +41,48 @@ func (p *Parser) ParseDirectory(fsys fs.FS) ([]*Command, error) {
 			return nil
 		}
 
-		// Skip index files for now
-		if strings.HasSuffix(path, "_index.md") {
+		// Check if this is a root command file
+		dir := filepath.Dir(path)
+		filename := filepath.Base(path)
+		
+		// Check if this is the binary's root command file (binary_name.md in root directory)
+		if dir == "." && p.config.BinaryName != "" && filename == p.config.BinaryName+".md" {
+			cmd, err := p.ParseFile(fsys, path)
+			if err != nil {
+				return fmt.Errorf("parsing binary root command %s: %w", path, err)
+			}
+			if cmd != nil {
+				cmd.IsRootCommand = true
+				cmd.CommandPath = "" // Root command has no path prefix
+				commands = append(commands, cmd)
+			}
 			return nil
+		}
+		
+		// For files in subdirectories, check if it's an index file
+		if dir != "." {
+			dirName := filepath.Base(dir)
+			if p.config.IsIndexFile(filename, dirName) {
+				// This is an index file - process it but mark it as such
+				cmd, err := p.ParseFile(fsys, path)
+				if err != nil {
+					return fmt.Errorf("parsing root command %s: %w", path, err)
+				}
+				if cmd != nil {
+					cmd.IsRootCommand = true
+					cmd.CommandPath = dirName // Set the command path for root commands
+					commands = append(commands, cmd)
+				}
+				return nil
+			}
+		}
+		
+		// Skip other pattern files that are not root commands
+		if filename == "_index.md" || filename == "index.md" {
+			// Only skip if not in root directory and not a configured root command pattern
+			if dir != "." {
+				return nil
+			}
 		}
 
 		cmd, err := p.ParseFile(fsys, path)
@@ -70,35 +116,163 @@ func (p *Parser) ParseFile(fsys fs.FS, path string) (*Command, error) {
 
 // ParseContent parses markdown content with YAML frontmatter
 func (p *Parser) ParseContent(content, filePath string) (*Command, error) {
-	var matter struct {
-		Title   string `yaml:"title"`
-		Command struct {
-			Name      string     `yaml:"name"`
-			Aliases   []string   `yaml:"aliases"`
-			Hidden    bool       `yaml:"hidden"`
-			Arguments []Argument `yaml:"arguments"`
-			Flags     []Flag     `yaml:"flags"`
-		} `yaml:"command"`
+	// Use yaml.v2 directly to parse with more control
+	var rawData map[string]interface{}
+	
+	// Extract frontmatter manually
+	if !strings.HasPrefix(content, "---") {
+		return nil, nil // No frontmatter, skip this file
 	}
-
-	body, err := frontmatter.Parse(strings.NewReader(content), &matter)
+	
+	parts := strings.SplitN(content[3:], "---", 2)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid frontmatter format")
+	}
+	
+	frontmatterContent := strings.TrimSpace(parts[0])
+	bodyContent := strings.TrimSpace(parts[1])
+	
+	// Parse YAML
+	err := yaml.Unmarshal([]byte(frontmatterContent), &rawData)
 	if err != nil {
 		return nil, fmt.Errorf("parsing frontmatter: %w", err)
 	}
-
-	// Skip files without command definitions
-	if matter.Command.Name == "" {
-		return nil, nil
+	
+	// Extract title
+	title := ""
+	if t, exists := rawData["title"]; exists {
+		if titleStr, ok := t.(string); ok {
+			title = titleStr
+		}
+	}
+	
+	// Extract command section
+	commandData, exists := rawData["command"]
+	if !exists {
+		return nil, nil // No command section
+	}
+	
+	commandMap, ok := commandData.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("command section must be an object")
+	}
+	
+	// Extract command name
+	var name string
+	if n, exists := commandMap["name"]; exists {
+		if nameStr, ok := n.(string); ok {
+			name = nameStr
+		}
+	}
+	
+	if name == "" {
+		return nil, nil // No command name
+	}
+	
+	// Extract aliases
+	var aliases []string
+	if a, exists := commandMap["aliases"]; exists {
+		if aliasSlice, ok := a.([]interface{}); ok {
+			for _, alias := range aliasSlice {
+				if aliasStr, ok := alias.(string); ok {
+					aliases = append(aliases, aliasStr)
+				}
+			}
+		}
+	}
+	
+	// Extract hidden
+	var hidden bool
+	if h, exists := commandMap["hidden"]; exists {
+		if hiddenBool, ok := h.(bool); ok {
+			hidden = hiddenBool
+		}
+	}
+	
+	// Parse arguments using our custom logic
+	var arguments []Argument
+	if rawArgs, exists := commandMap["arguments"]; exists {
+		args, err := p.parseArguments(rawArgs, filePath)
+		if err != nil {
+			return nil, fmt.Errorf("parsing arguments: %w", err)
+		}
+		arguments = args
+	}
+	
+	// Parse flags normally since they don't have the mixed format issue
+	var flags []Flag
+	if f, exists := commandMap["flags"]; exists {
+		if flagsData, ok := f.([]interface{}); ok {
+			for i, flagData := range flagsData {
+				if flagMap, ok := flagData.(map[interface{}]interface{}); ok {
+					flag := Flag{Type: TypeString} // Default type
+					
+					if name, exists := flagMap["name"]; exists {
+						if nameStr, ok := name.(string); ok {
+							flag.Name = nameStr
+						} else {
+							return nil, fmt.Errorf("file %s: flag %d: name must be a string", filePath, i)
+						}
+					} else {
+						return nil, fmt.Errorf("file %s: flag %d: name is required", filePath, i)
+					}
+					
+					if shorthand, exists := flagMap["shorthand"]; exists {
+						if shorthandStr, ok := shorthand.(string); ok {
+							flag.Shorthand = shorthandStr
+						}
+					}
+					
+					if desc, exists := flagMap["description"]; exists {
+						if descStr, ok := desc.(string); ok {
+							flag.Description = descStr
+						}
+					}
+					
+					if typ, exists := flagMap["type"]; exists {
+						if typStr, ok := typ.(string); ok {
+							flag.Type = typStr
+						}
+					}
+					
+					if def, exists := flagMap["default"]; exists {
+						flag.Default = def
+					}
+					
+					if req, exists := flagMap["required"]; exists {
+						if reqBool, ok := req.(bool); ok {
+							flag.Required = reqBool
+						}
+					}
+					
+					if enum, exists := flagMap["enum"]; exists {
+						if enumSlice, ok := enum.([]interface{}); ok {
+							for _, e := range enumSlice {
+								if eStr, ok := e.(string); ok {
+									flag.Enum = append(flag.Enum, eStr)
+								} else {
+									// Non-string enum values should cause an error later in validation
+									// For now, convert to string to preserve the original value for error reporting
+									flag.Enum = append(flag.Enum, fmt.Sprintf("%v", e))
+								}
+							}
+						}
+					}
+					
+					flags = append(flags, flag)
+				}
+			}
+		}
 	}
 
 	cmd := &Command{
-		Title:       matter.Title,
-		Name:        matter.Command.Name,
-		Aliases:     matter.Command.Aliases,
-		Hidden:      matter.Command.Hidden,
-		Arguments:   matter.Command.Arguments,
-		Flags:       matter.Command.Flags,
-		Description: string(body),
+		Title:       title,
+		Name:        name,
+		Aliases:     aliases,
+		Hidden:      hidden,
+		Arguments:   arguments,
+		Flags:       flags,
+		Description: bodyContent,
 		FilePath:    filePath,
 	}
 
@@ -110,23 +284,106 @@ func (p *Parser) ParseContent(content, filePath string) (*Command, error) {
 	return cmd, nil
 }
 
+// parseArguments handles both string array and object array formats for arguments
+func (p *Parser) parseArguments(rawArgs interface{}, filePath string) ([]Argument, error) {
+	switch args := rawArgs.(type) {
+	case []interface{}:
+		// Check if first element is a string or object to determine format
+		if len(args) == 0 {
+			return []Argument{}, nil
+		}
+
+		// Check the type of the first element
+		switch args[0].(type) {
+		case string:
+			// Array of strings format: ["file", "input"]
+			var arguments []Argument
+			for i, arg := range args {
+				argStr, ok := arg.(string)
+				if !ok {
+					return nil, fmt.Errorf("file %s: argument %d: mixed array formats not supported (expected all strings)", filePath, i)
+				}
+				arguments = append(arguments, Argument{
+					Name:        argStr,
+					Description: "",
+					Required:    true, // Default to required for string-only format
+					Type:        TypeString, // Default type
+				})
+			}
+			return arguments, nil
+
+		case map[interface{}]interface{}:
+			// Array of objects format: [{name: "file", type: "string", ...}]
+			var arguments []Argument
+			for i, arg := range args {
+				argMap, ok := arg.(map[interface{}]interface{})
+				if !ok {
+					return nil, fmt.Errorf("file %s: argument %d: mixed array formats not supported (expected all objects)", filePath, i)
+				}
+
+				// Convert map to Argument struct
+				argument := Argument{
+					Type: TypeString, // Default type
+				}
+
+				if name, exists := argMap["name"]; exists {
+					if nameStr, ok := name.(string); ok {
+						argument.Name = nameStr
+					} else {
+						return nil, fmt.Errorf("file %s: argument %d: name must be a string", filePath, i)
+					}
+				} else {
+					return nil, fmt.Errorf("file %s: argument %d: name is required", filePath, i)
+				}
+
+				if desc, exists := argMap["description"]; exists {
+					if descStr, ok := desc.(string); ok {
+						argument.Description = descStr
+					}
+				}
+
+				if req, exists := argMap["required"]; exists {
+					if reqBool, ok := req.(bool); ok {
+						argument.Required = reqBool
+					}
+				}
+
+				if typ, exists := argMap["type"]; exists {
+					if typStr, ok := typ.(string); ok {
+						argument.Type = typStr
+					}
+				}
+
+				arguments = append(arguments, argument)
+			}
+			return arguments, nil
+
+		default:
+			return nil, fmt.Errorf("file %s: unsupported argument format - expected string or object", filePath)
+		}
+
+	default:
+		return nil, fmt.Errorf("file %s: arguments must be an array", filePath)
+	}
+}
+
 // validateCommand validates a parsed command
 func (p *Parser) validateCommand(cmd *Command) error {
 	if cmd.Name == "" {
-		return fmt.Errorf("command name is required")
+		return fmt.Errorf("file %s: command name is required", cmd.FilePath)
 	}
 
 	if cmd.Title == "" {
-		return fmt.Errorf("command title is required")
+		return fmt.Errorf("file %s: command title is required", cmd.FilePath)
 	}
 
-	// Track field names to prevent duplicates
-	fieldNames := make(map[string]bool)
+	// Track field names to prevent duplicates with their source information
+	fieldNames := make(map[string]fieldSource)
 
 	// Validate arguments
 	for i, arg := range cmd.Arguments {
 		if arg.Name == "" {
-			return fmt.Errorf("argument %d: name is required", i)
+			return fmt.Errorf("file %s: argument %d: name is required", cmd.FilePath, i)
 		}
 		if arg.Type == "" {
 			cmd.Arguments[i].Type = TypeString // Default type
@@ -134,16 +391,20 @@ func (p *Parser) validateCommand(cmd *Command) error {
 
 		// Check for duplicate field names (after conversion to PascalCase)
 		fieldName := pascalCase(arg.Name)
-		if fieldNames[fieldName] {
-			return fmt.Errorf("duplicate field name after conversion: %s (from argument %s)", fieldName, arg.Name)
+		if existing, exists := fieldNames[fieldName]; exists {
+			return fmt.Errorf("file %s: duplicate field name '%s' - argument '%s' conflicts with %s '%s'", 
+				cmd.FilePath, fieldName, arg.Name, existing.fieldType, existing.originalName)
 		}
-		fieldNames[fieldName] = true
+		fieldNames[fieldName] = fieldSource{
+			fieldType:    "argument",
+			originalName: arg.Name,
+		}
 	}
 
 	// Validate flags and set defaults
 	for i, flag := range cmd.Flags {
 		if flag.Name == "" {
-			return fmt.Errorf("flag %d: name is required", i)
+			return fmt.Errorf("file %s: flag %d: name is required", cmd.FilePath, i)
 		}
 		if flag.Type == "" {
 			cmd.Flags[i].Type = TypeString // Default type
@@ -152,14 +413,18 @@ func (p *Parser) validateCommand(cmd *Command) error {
 
 		// Check for duplicate field names (after conversion to PascalCase)
 		fieldName := pascalCase(flag.Name)
-		if fieldNames[fieldName] {
-			return fmt.Errorf("duplicate field name after conversion: %s (from flag %s)", fieldName, flag.Name)
+		if existing, exists := fieldNames[fieldName]; exists {
+			return fmt.Errorf("file %s: duplicate field name '%s' - flag '%s' conflicts with %s '%s'", 
+				cmd.FilePath, fieldName, flag.Name, existing.fieldType, existing.originalName)
 		}
-		fieldNames[fieldName] = true
+		fieldNames[fieldName] = fieldSource{
+			fieldType:    "flag",
+			originalName: flag.Name,
+		}
 
 		// Validate enum values
 		if len(flag.Enum) > 0 && flag.Type != TypeString {
-			return fmt.Errorf("flag %s: enum is only supported for string flags", flag.Name)
+			return fmt.Errorf("file %s: flag %s: enum is only supported for string flags", cmd.FilePath, flag.Name)
 		}
 	}
 

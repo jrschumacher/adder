@@ -31,10 +31,12 @@ It processes markdown files with YAML frontmatter to create:
 	// Create handlers
 	generateHandler := NewGenerateHandler()
 	versionHandler := NewVersionHandler()
+	initHandler := NewInitHandler()
 
 	// Add generated commands
 	rootCmd.AddCommand(generated.NewGenerateCommand(generateHandler))
 	rootCmd.AddCommand(generated.NewVersionCommand(versionHandler))
+	rootCmd.AddCommand(generated.NewInitCommand(initHandler))
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

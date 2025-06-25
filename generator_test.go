@@ -52,7 +52,7 @@ This is a test command for unit testing.`
 		InputDir:   inputDir,
 		OutputDir:  outputDir,
 		Package:    "testpkg",
-		FileSuffix: "_generated.go",
+		GeneratedFileSuffix: "_generated.go",
 	}
 
 	generator := New(config)
@@ -144,6 +144,31 @@ command:
 ---`,
 			wantError: true,
 		},
+		{
+			name: "arguments as array of strings",
+			markdown: `---
+title: String Array Arguments
+command:
+  name: string-args
+  arguments:
+    - file
+    - output
+---`,
+			wantError: false,
+		},
+		{
+			name: "mixed argument formats (should fail)",
+			markdown: `---
+title: Mixed Arguments
+command:
+  name: mixed-args
+  arguments:
+    - file
+    - name: detailed
+      type: string
+---`,
+			wantError: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -170,7 +195,7 @@ command:
 				InputDir:   inputDir,
 				OutputDir:  filepath.Join(tempDir, "output"),
 				Package:    "testpkg",
-				FileSuffix: "_generated.go",
+				GeneratedFileSuffix: "_generated.go",
 			}
 
 			generator := New(config)
@@ -230,7 +255,7 @@ Test command with quotes in descriptions.`
 		InputDir:   inputDir,
 		OutputDir:  outputDir,
 		Package:    "testpkg",
-		FileSuffix: "_generated.go",
+		GeneratedFileSuffix: "_generated.go",
 	}
 
 	generator := NewGenerator(config)
@@ -312,6 +337,124 @@ func TestGenerator_GetStats(t *testing.T) {
 		if stats[key] != expected {
 			t.Errorf("GetStats()[%q] = %d, want %d", key, stats[key], expected)
 		}
+	}
+}
+
+func TestParser_ArgumentFormats(t *testing.T) {
+	tests := []struct {
+		name      string
+		markdown  string
+		wantArgs  []Argument
+		wantError bool
+	}{
+		{
+			name: "object format arguments",
+			markdown: `---
+title: Object Format Test
+command:
+  name: object-test
+  arguments:
+    - name: file
+      description: Input file
+      required: true
+      type: string
+    - name: output
+      description: Output file
+      required: false
+      type: string
+---`,
+			wantArgs: []Argument{
+				{Name: "file", Description: "Input file", Required: true, Type: "string"},
+				{Name: "output", Description: "Output file", Required: false, Type: "string"},
+			},
+			wantError: false,
+		},
+		{
+			name: "string array format arguments",
+			markdown: `---
+title: String Array Test
+command:
+  name: string-test
+  arguments:
+    - file
+    - output
+    - pattern
+---`,
+			wantArgs: []Argument{
+				{Name: "file", Description: "", Required: true, Type: "string"},
+				{Name: "output", Description: "", Required: true, Type: "string"},
+				{Name: "pattern", Description: "", Required: true, Type: "string"},
+			},
+			wantError: false,
+		},
+		{
+			name: "empty arguments",
+			markdown: `---
+title: No Arguments Test
+command:
+  name: no-args
+  arguments: []
+---`,
+			wantArgs:  []Argument{},
+			wantError: false,
+		},
+		{
+			name: "mixed formats (should fail)",
+			markdown: `---
+title: Mixed Format Test
+command:
+  name: mixed-test
+  arguments:
+    - file
+    - name: detailed
+      type: string
+---`,
+			wantArgs:  nil,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := NewParser(DefaultConfig())
+			cmd, err := parser.ParseContent(tt.markdown, "test.md")
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("Expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if cmd == nil {
+				t.Fatalf("Expected command but got nil")
+			}
+
+			if len(cmd.Arguments) != len(tt.wantArgs) {
+				t.Errorf("Expected %d arguments, got %d", len(tt.wantArgs), len(cmd.Arguments))
+				return
+			}
+
+			for i, expected := range tt.wantArgs {
+				actual := cmd.Arguments[i]
+				if actual.Name != expected.Name {
+					t.Errorf("Argument %d: expected name %q, got %q", i, expected.Name, actual.Name)
+				}
+				if actual.Description != expected.Description {
+					t.Errorf("Argument %d: expected description %q, got %q", i, expected.Description, actual.Description)
+				}
+				if actual.Required != expected.Required {
+					t.Errorf("Argument %d: expected required %v, got %v", i, expected.Required, actual.Required)
+				}
+				if actual.Type != expected.Type {
+					t.Errorf("Argument %d: expected type %q, got %q", i, expected.Type, actual.Type)
+				}
+			}
+		})
 	}
 }
 

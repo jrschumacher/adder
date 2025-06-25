@@ -1,0 +1,8 @@
+# Adder configuration file
+# See https://github.com/jrschumacher/adder for documentation
+
+binary_name: adder
+input: docs/commands
+output: cmd/adder/generated
+package: generated
+suffix: _generated.go

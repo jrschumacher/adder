@@ -40,10 +40,23 @@ func (a *Adder) Generate() error {
 
 // GenerateWithContext processes the input directory and generates command stubs with context
 func (a *Adder) GenerateWithContext(ctx context.Context) error {
+	return a.GenerateWithOptions(ctx, GenerateOptions{})
+}
+
+// GenerateOptions holds options for code generation
+type GenerateOptions struct {
+	Force bool // Force regeneration of all files
+}
+
+// GenerateWithOptions processes the input directory and generates command stubs with options
+func (a *Adder) GenerateWithOptions(ctx context.Context, opts GenerateOptions) error {
 	// Check if input directory exists
 	if _, err := os.Stat(a.config.InputDir); os.IsNotExist(err) {
 		return fmt.Errorf("input directory does not exist: %s", a.config.InputDir)
 	}
+
+	// Set force regeneration option
+	a.generator.SetForceRegeneration(opts.Force)
 
 	// Create filesystem from input directory
 	inputFS := os.DirFS(a.config.InputDir)
@@ -99,8 +112,8 @@ func (a *Adder) validateConfig() error {
 		return fmt.Errorf("package is required")
 	}
 
-	if a.config.FileSuffix == "" {
-		a.config.FileSuffix = "_generated.go"
+	if a.config.GeneratedFileSuffix == "" {
+		a.config.GeneratedFileSuffix = "_generated.go"
 	}
 
 	return nil
@@ -109,6 +122,20 @@ func (a *Adder) validateConfig() error {
 // GetCommands returns all parsed commands (requires Generate to be called first)
 func (a *Adder) GetCommands() []*Command {
 	return a.generator.ListCommands()
+}
+
+// ParseCommands parses commands from input directory without generating code
+func (a *Adder) ParseCommands() ([]*Command, error) {
+	// Check if input directory exists
+	if _, err := os.Stat(a.config.InputDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("input directory does not exist: %s", a.config.InputDir)
+	}
+
+	// Create filesystem from input directory
+	inputFS := os.DirFS(a.config.InputDir)
+
+	// Parse commands
+	return a.generator.parser.ParseDirectory(inputFS)
 }
 
 // GetCommand returns a specific command by name

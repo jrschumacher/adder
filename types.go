@@ -3,6 +3,8 @@ package adder
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 )
 
 // Type constants for common data types
@@ -16,32 +18,46 @@ const (
 
 // Config represents the generator configuration
 type Config struct {
-	InputDir   string `yaml:"input_dir"`
-	OutputDir  string `yaml:"output_dir"`
-	Package    string `yaml:"package"`
-	FileSuffix string `yaml:"file_suffix"`
+	BinaryName          string            `yaml:"binary_name"`
+	InputDir            string            `yaml:"input"`
+	OutputDir           string            `yaml:"output"`
+	Package             string            `yaml:"package"`
+	GeneratedFileSuffix string            `yaml:"generated_file_suffix"`
+	IndexFormat         string            `yaml:"index_format,omitempty"`
+	PackageStrategy     string            `yaml:"package_strategy,omitempty"` // "single", "directory", "path"
+	Validation          ValidationConfig  `yaml:"validation,omitempty"`
+}
+
+// ValidationConfig represents validation-specific settings
+type ValidationConfig struct {
+	Strict bool `yaml:"strict,omitempty"`
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
-		InputDir:   "docs",
-		OutputDir:  "cmd",
-		Package:    "cmd",
-		FileSuffix: "_generated.go",
+		BinaryName:          "", // Required field, must be set in config
+		InputDir:            "docs/commands",
+		OutputDir:           "generated",
+		Package:             "generated",
+		GeneratedFileSuffix: "_generated.go",
+		IndexFormat:         "directory", // Use directory name (e.g., example/example.md)
+		PackageStrategy:     "directory", // Use directory-based package names to avoid conflicts
 	}
 }
 
 // Command represents a command definition from markdown
 type Command struct {
-	Title       string     `yaml:"title"`
-	Name        string     `yaml:"name"`
-	Aliases     []string   `yaml:"aliases"`
-	Hidden      bool       `yaml:"hidden"`
-	Arguments   []Argument `yaml:"arguments"`
-	Flags       []Flag     `yaml:"flags"`
-	Description string     // Markdown content
-	FilePath    string     // Source file path
+	Title         string     `yaml:"title"`
+	Name          string     `yaml:"name"`
+	Aliases       []string   `yaml:"aliases"`
+	Hidden        bool       `yaml:"hidden"`
+	Arguments     []Argument `yaml:"arguments"`
+	Flags         []Flag     `yaml:"flags"`
+	Description   string     // Markdown content
+	FilePath      string     // Source file path
+	IsRootCommand bool       // True if this is a root command for subcommands
+	CommandPath   string     // The command path (e.g., "example" for "example" root command)
 }
 
 // Argument represents a command argument
@@ -233,4 +249,85 @@ func joinStrings(strs []string, sep string) string {
 		result += sep + strs[i]
 	}
 	return result
+}
+
+// GetPackageName returns the package name for a command based on the strategy
+func (c *Config) GetPackageName(filePath string) string {
+	switch c.PackageStrategy {
+	case "single":
+		// Always use the base package name (old behavior)
+		return c.Package
+		
+	case "directory":
+		// Use directory structure for package names
+		dir := filepath.Dir(filePath)
+		if dir == "." {
+			// Root directory - use base package name
+			return c.Package
+		}
+		
+		// Convert directory path to valid Go package name
+		// e.g., "auth/admin" -> "auth_admin", "dev/selectors" -> "dev_selectors"
+		packageName := strings.ReplaceAll(dir, "/", "_")
+		packageName = strings.ReplaceAll(packageName, "-", "_")
+		
+		// Ensure it starts with a letter (Go package name requirements)
+		if len(packageName) > 0 && !isLetter(packageName[0]) {
+			packageName = "pkg_" + packageName
+		}
+		
+		return packageName
+		
+	case "path":
+		// Use full path including filename for maximum uniqueness
+		// e.g., "auth/login.md" -> "auth_login"
+		fullPath := strings.TrimSuffix(filePath, filepath.Ext(filePath))
+		packageName := strings.ReplaceAll(fullPath, "/", "_")
+		packageName = strings.ReplaceAll(packageName, "-", "_")
+		
+		// Ensure it starts with a letter
+		if len(packageName) > 0 && !isLetter(packageName[0]) {
+			packageName = "pkg_" + packageName
+		}
+		
+		return packageName
+		
+	default:
+		// Default to directory strategy
+		c.PackageStrategy = "directory"
+		return c.GetPackageName(filePath)
+	}
+}
+
+// isLetter checks if a byte is a letter (for Go package name validation)
+func isLetter(b byte) bool {
+	return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z')
+}
+
+// GetIndexPatterns returns the possible filenames for index files in a directory
+func (c *Config) GetIndexPatterns(dirName string) []string {
+	switch c.IndexFormat {
+	case "index":
+		return []string{"index.md"}
+	case "_index":
+		return []string{"_index.md"}
+	case "directory":
+		return []string{dirName + ".md", "index.md"} // Try dirName.md first, then index.md
+	case "hugo":
+		return []string{"_index.md"} // Alias for _index
+	default:
+		// Default to directory name format
+		return []string{dirName + ".md", "index.md"}
+	}
+}
+
+// IsIndexFile checks if a filename matches the index pattern for a directory
+func (c *Config) IsIndexFile(filename, dirName string) bool {
+	patterns := c.GetIndexPatterns(dirName)
+	for _, pattern := range patterns {
+		if filename == pattern {
+			return true
+		}
+	}
+	return false
 }
