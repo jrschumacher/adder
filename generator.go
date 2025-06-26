@@ -144,15 +144,9 @@ func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 		}
 	}
 
-	// Check if any command needs I/O helpers (for stdin/file handling)
+	// I/O helpers are not automatically generated
+	// They can be added manually if needed for specific use cases
 	needsIO := false
-	for _, cmd := range commands {
-		// Enable I/O helpers if command has arguments (could be files) or if explicitly marked
-		if len(cmd.Arguments) > 0 {
-			needsIO = true
-			break
-		}
-	}
 
 	// Determine package name based on the first command's file path
 	// All commands in the same file should have the same package name
