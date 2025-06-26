@@ -9,6 +9,7 @@ import (
 
 // InitRequestFlags represents the flags for the init command
 type InitRequestFlags struct {
+	BinaryName string `json:"binaryName"` // Name of the binary/CLI (required)
 	Force bool `json:"force"` // Overwrite existing configuration file
 }
 
@@ -17,12 +18,10 @@ type InitRequest struct {
 	Flags InitRequestFlags `json:"flags"`
 }
 
-// InitHandler defines the interface for handling init commands
-type InitHandler interface {
-	HandleInit(cmd *cobra.Command, req *InitRequest) error
-}
+// InitHandler defines the function type for handling init commands
+type InitHandler func(cmd *cobra.Command, req *InitRequest) error
 
-// NewInitCommand creates a new init command with the provided handler
+// NewInitCommand creates a new init command with the provided handler function
 func NewInitCommand(handler InitHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init",
@@ -33,6 +32,7 @@ func NewInitCommand(handler InitHandler) *cobra.Command {
 	}
 
 	// Register flags
+	cmd.Flags().StringP("binary-name", "b", "", "Name of the binary/CLI (required)")
 	cmd.Flags().BoolP("force", "f", false, "Overwrite existing configuration file")
 
 	return cmd
@@ -40,15 +40,17 @@ func NewInitCommand(handler InitHandler) *cobra.Command {
 
 // runInit handles argument and flag extraction
 func runInit(cmd *cobra.Command, args []string, handler InitHandler) error {
+	binaryName, _ := cmd.Flags().GetString("binary-name")
 	force, _ := cmd.Flags().GetBool("force")
 
 	// Create request
 	req := &InitRequest{
 		Flags: InitRequestFlags{
+			BinaryName: binaryName,
 			Force: force,
 		},
 	}
 
 	// Call handler
-	return handler.HandleInit(cmd, req)
+	return handler(cmd, req)
 }

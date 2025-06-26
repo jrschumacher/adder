@@ -12,12 +12,10 @@ import (
 type VersionRequest struct {
 }
 
-// VersionHandler defines the interface for handling version commands
-type VersionHandler interface {
-	HandleVersion(cmd *cobra.Command, req *VersionRequest) error
-}
+// VersionHandler defines the function type for handling version commands
+type VersionHandler func(cmd *cobra.Command, req *VersionRequest) error
 
-// NewVersionCommand creates a new version command with the provided handler
+// NewVersionCommand creates a new version command with the provided handler function
 func NewVersionCommand(handler VersionHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "version",
@@ -40,5 +38,5 @@ func runVersion(cmd *cobra.Command, args []string, handler VersionHandler) error
 	}
 
 	// Call handler
-	return handler.HandleVersion(cmd, req)
+	return handler(cmd, req)
 }

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -269,6 +270,13 @@ func (g *Generator) SetForceRegeneration(force bool) {
 // shouldRegenerateFile checks if a file needs to be regenerated based on modification times
 func (g *Generator) shouldRegenerateFile(sourceFile, outputFile string) (bool, error) {
 	if g.force {
+		return true, nil
+	}
+
+	// Check if this is a generated file (has the configured suffix)
+	if strings.HasSuffix(outputFile, g.config.GeneratedFileSuffix) {
+		// Generated files should always be regenerated automatically
+		// since they're meant to be auto-generated and overwritten
 		return true, nil
 	}
 
