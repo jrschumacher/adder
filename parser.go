@@ -265,15 +265,82 @@ func (p *Parser) ParseContent(content, filePath string) (*Command, error) {
 		}
 	}
 
+	// Parse persistent flags
+	var persistentFlags []Flag
+	if f, exists := commandMap["persistent_flags"]; exists {
+		if flagsData, ok := f.([]interface{}); ok {
+			for i, flagData := range flagsData {
+				if flagMap, ok := flagData.(map[interface{}]interface{}); ok {
+					flag := Flag{Type: TypeString} // Default type
+					
+					if name, exists := flagMap["name"]; exists {
+						if nameStr, ok := name.(string); ok {
+							flag.Name = nameStr
+						} else {
+							return nil, fmt.Errorf("file %s: persistent_flag %d: name must be a string", filePath, i)
+						}
+					} else {
+						return nil, fmt.Errorf("file %s: persistent_flag %d: name is required", filePath, i)
+					}
+					
+					if shorthand, exists := flagMap["shorthand"]; exists {
+						if shorthandStr, ok := shorthand.(string); ok {
+							flag.Shorthand = shorthandStr
+						}
+					}
+					
+					if desc, exists := flagMap["description"]; exists {
+						if descStr, ok := desc.(string); ok {
+							flag.Description = descStr
+						}
+					}
+					
+					if typ, exists := flagMap["type"]; exists {
+						if typStr, ok := typ.(string); ok {
+							flag.Type = typStr
+						}
+					}
+					
+					if def, exists := flagMap["default"]; exists {
+						flag.Default = def
+					}
+					
+					if req, exists := flagMap["required"]; exists {
+						if reqBool, ok := req.(bool); ok {
+							flag.Required = reqBool
+						}
+					}
+					
+					if enum, exists := flagMap["enum"]; exists {
+						if enumSlice, ok := enum.([]interface{}); ok {
+							for _, e := range enumSlice {
+								if eStr, ok := e.(string); ok {
+									flag.Enum = append(flag.Enum, eStr)
+								} else {
+									// Non-string enum values should cause an error later in validation
+									// For now, convert to string to preserve the original value for error reporting
+									flag.Enum = append(flag.Enum, fmt.Sprintf("%v", e))
+								}
+							}
+						}
+					}
+					
+					persistentFlags = append(persistentFlags, flag)
+				}
+			}
+		}
+	}
+
 	cmd := &Command{
-		Title:       title,
-		Name:        name,
-		Aliases:     aliases,
-		Hidden:      hidden,
-		Arguments:   arguments,
-		Flags:       flags,
-		Description: bodyContent,
-		FilePath:    filePath,
+		Title:           title,
+		Name:            name,
+		Aliases:         aliases,
+		Hidden:          hidden,
+		Arguments:       arguments,
+		Flags:           flags,
+		PersistentFlags: persistentFlags,
+		Description:     bodyContent,
+		FilePath:        filePath,
 	}
 
 	// Validate command

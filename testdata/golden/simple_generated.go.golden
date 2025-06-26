@@ -30,6 +30,8 @@ func NewSimpleCommand(handler SimpleHandler) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+
 	// Register flags
 	cmd.Flags().String("flag", "", "A simple flag")
 

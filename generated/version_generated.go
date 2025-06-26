@@ -25,6 +25,8 @@ func NewVersionCommand(handler VersionHandler) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+
 	// Register flags
 
 	return cmd

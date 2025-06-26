@@ -49,11 +49,11 @@ This command demonstrates the adder package's ability to generate type-safe CLI 
 
 ```bash
 # Simple greeting
-otdfctl hello Alice
+hello Alice
 
 # Capitalized greeting with big ASCII art
-otdfctl hello Alice --capitalize --ascii-art=big
+hello Alice --capitalize --ascii-art=big
 
 # Repeat the greeting multiple times with banner style
-otdfctl hello Bob --ascii-art=banner --repeat=2
+hello Bob --ascii-art=banner --repeat=2
 ```

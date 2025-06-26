@@ -31,6 +31,8 @@ func NewInitCommand(handler InitHandler) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+
 	// Register flags
 	cmd.Flags().StringP("binary-name", "b", "", "Name of the binary/CLI (required)")
 	cmd.Flags().BoolP("force", "f", false, "Overwrite existing configuration file")

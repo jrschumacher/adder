@@ -48,16 +48,17 @@ func DefaultConfig() *Config {
 
 // Command represents a command definition from markdown
 type Command struct {
-	Title         string     `yaml:"title"`
-	Name          string     `yaml:"name"`
-	Aliases       []string   `yaml:"aliases"`
-	Hidden        bool       `yaml:"hidden"`
-	Arguments     []Argument `yaml:"arguments"`
-	Flags         []Flag     `yaml:"flags"`
-	Description   string     // Markdown content
-	FilePath      string     // Source file path
-	IsRootCommand bool       // True if this is a root command for subcommands
-	CommandPath   string     // The command path (e.g., "example" for "example" root command)
+	Title           string     `yaml:"title"`
+	Name            string     `yaml:"name"`
+	Aliases         []string   `yaml:"aliases"`
+	Hidden          bool       `yaml:"hidden"`
+	Arguments       []Argument `yaml:"arguments"`
+	Flags           []Flag     `yaml:"flags"`
+	PersistentFlags []Flag     `yaml:"persistent_flags"`
+	Description     string     // Markdown content
+	FilePath        string     // Source file path
+	IsRootCommand   bool       // True if this is a root command for subcommands
+	CommandPath     string     // The command path (e.g., "example" for "example" root command)
 }
 
 // Argument represents a command argument

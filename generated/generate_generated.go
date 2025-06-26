@@ -37,6 +37,8 @@ func NewGenerateCommand(handler GenerateHandler) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+
 	// Register flags
 	cmd.Flags().StringP("binary-name", "b", "", "Name of the binary/CLI (required unless set in config)")
 	cmd.Flags().StringP("input", "i", "docs/commands", "Input directory containing markdown files")
