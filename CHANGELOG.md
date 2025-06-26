@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/jrschumacher/adder/compare/v0.4.0...v0.5.0) (2025-06-26)
+
+
+### Features
+
+* add persistent_flags support for global CLI flags ([#14](https://github.com/jrschumacher/adder/issues/14)) ([ec91438](https://github.com/jrschumacher/adder/commit/ec91438a5f297f1ed1e6eda057e15b3ed52d328b))
+
 ## [0.4.0](https://github.com/jrschumacher/adder/compare/v0.3.0...v0.4.0) (2025-06-26)
 
 
