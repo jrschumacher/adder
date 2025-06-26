@@ -52,6 +52,15 @@ type {{$structName}}Flags struct {
 }
 {{- end}}
 
+{{- if $cmd.PersistentFlags}}
+// {{$structName}}PersistentFlags represents the persistent flags for the {{$cmd.Name}} command
+type {{$structName}}PersistentFlags struct {
+	{{- range $cmd.PersistentFlags}}
+	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
+	{{- end}}
+}
+{{- end}}
+
 // {{$structName}} represents the parameters for the {{$cmd.Name}} command
 type {{$structName}} struct {
 	{{- if $cmd.Arguments}}
@@ -59,6 +68,9 @@ type {{$structName}} struct {
 	{{- end}}
 	{{- if $cmd.Flags}}
 	Flags {{$structName}}Flags ` + "`" + `json:"flags"` + "`" + `
+	{{- end}}
+	{{- if $cmd.PersistentFlags}}
+	PersistentFlags {{$structName}}PersistentFlags ` + "`" + `json:"persistent_flags"` + "`" + `
 	{{- end}}
 }
 
@@ -84,6 +96,18 @@ func {{$functionName}}(handler {{$handlerName}}) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+	{{- range $cmd.PersistentFlags}}
+	{{- if .Shorthand}}
+	cmd.PersistentFlags().{{.GetCobraFlagMethodP}}("{{.Name}}", "{{.Shorthand}}", {{.GetDefaultValue}}, "{{escapeString .Description}}")
+	{{- else}}
+	cmd.PersistentFlags().{{.GetCobraFlagMethod}}("{{.Name}}", {{.GetDefaultValue}}, "{{escapeString .Description}}")
+	{{- end}}
+	{{- if .Required}}
+	cmd.MarkPersistentFlagRequired("{{.Name}}")
+	{{- end}}
+	{{- end}}
+
 	// Register flags
 	{{- range $cmd.Flags}}
 	{{- if .Shorthand}}
@@ -108,8 +132,28 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 	{{- range $cmd.Flags}}
 	{{camelCase .Name}}, _ := cmd.Flags().Get{{.GetCobraFlagMethod}}("{{.Name}}")
 	{{- end}}
+	
+	{{- range $cmd.PersistentFlags}}
+	{{camelCase .Name}}, _ := cmd.Flags().Get{{.GetCobraFlagMethod}}("{{.Name}}")
+	{{- end}}
 
 	{{- range $cmd.Flags}}
+	{{- if .Enum}}
+	// Validate enum for {{.Name}}
+	{{camelCase .Name}}Valid := false
+	for _, validValue := range []string{{"{"}}{{range $i, $val := .Enum}}{{if $i}}, {{end}}"{{$val}}"{{end}}{{"}"}} {
+		if {{camelCase .Name}} == validValue {
+			{{camelCase .Name}}Valid = true
+			break
+		}
+	}
+	if !{{camelCase .Name}}Valid {
+		return fmt.Errorf("invalid {{.Name}}: %s (must be {{joinEnum .Enum}})", {{camelCase .Name}})
+	}
+	{{- end}}
+	{{- end}}
+
+	{{- range $cmd.PersistentFlags}}
 	{{- if .Enum}}
 	// Validate enum for {{.Name}}
 	{{camelCase .Name}}Valid := false
@@ -137,6 +181,13 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 		{{- if $cmd.Flags}}
 		Flags: {{$structName}}Flags{
 			{{- range $cmd.Flags}}
+			{{pascalCase .Name}}: {{camelCase .Name}},
+			{{- end}}
+		},
+		{{- end}}
+		{{- if $cmd.PersistentFlags}}
+		PersistentFlags: {{$structName}}PersistentFlags{
+			{{- range $cmd.PersistentFlags}}
 			{{pascalCase .Name}}: {{camelCase .Name}},
 			{{- end}}
 		},

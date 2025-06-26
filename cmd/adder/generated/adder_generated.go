@@ -7,9 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// AdderRequestPersistentFlags represents the persistent flags for the adder command
+type AdderRequestPersistentFlags struct {
+	Verbose bool `json:"verbose"` // Enable verbose output for debugging and CI
+	Quiet bool `json:"quiet"` // Suppress all output except errors
+}
 
 // AdderRequest represents the parameters for the adder command
 type AdderRequest struct {
+	PersistentFlags AdderRequestPersistentFlags `json:"persistent_flags"`
 }
 
 // AdderHandler defines the function type for handling adder commands
@@ -25,6 +31,10 @@ func NewAdderCommand(handler AdderHandler) *cobra.Command {
 		},
 	}
 
+	// Register persistent flags
+	cmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output for debugging and CI")
+	cmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress all output except errors")
+
 	// Register flags
 
 	return cmd
@@ -32,9 +42,15 @@ func NewAdderCommand(handler AdderHandler) *cobra.Command {
 
 // runAdder handles argument and flag extraction
 func runAdder(cmd *cobra.Command, args []string, handler AdderHandler) error {
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	quiet, _ := cmd.Flags().GetBool("quiet")
 
 	// Create request
 	req := &AdderRequest{
+		PersistentFlags: AdderRequestPersistentFlags{
+			Verbose: verbose,
+			Quiet: quiet,
+		},
 	}
 
 	// Call handler

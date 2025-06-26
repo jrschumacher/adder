@@ -18,17 +18,15 @@ var (
 )
 
 func main() {
-	rootCmd = &cobra.Command{
-		Use:   "adder",
-		Short: "A documentation-driven CLI generator",
-		Long: `Adder generates type-safe CLI commands from markdown documentation.
+	// Use the generated root command with persistent flags
+	rootCmd = generated.NewAdderCommand(adderCmd)
+	rootCmd.Long = `Adder generates type-safe CLI commands from markdown documentation.
 
 It processes markdown files with YAML frontmatter to create:
 - Type-safe command interfaces
 - Request/response structures  
 - Handler interfaces
-- Argument and flag validation`,
-	}
+- Argument and flag validation`
 
 	// Add generated commands with handler functions
 	rootCmd.AddCommand(generated.NewGenerateCommand(generateCmd))
@@ -39,4 +37,10 @@ It processes markdown files with YAML frontmatter to create:
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// adderCmd processes the root adder command request
+func adderCmd(cmd *cobra.Command, req *generated.AdderRequest) error {
+	// For now, just show help when no subcommand is provided
+	return cmd.Help()
 }

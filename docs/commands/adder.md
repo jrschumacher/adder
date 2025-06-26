@@ -2,6 +2,17 @@
 title: A documentation-driven CLI generator
 command:
   name: adder
+  persistent_flags:
+    - name: verbose
+      shorthand: v
+      description: Enable verbose output for debugging and CI
+      type: bool
+      default: false
+    - name: quiet
+      shorthand: q
+      description: Suppress all output except errors
+      type: bool
+      default: false
 ---
 
 # Adder

@@ -13,7 +13,7 @@ The current handler generation approach requires developers to create structs th
 3. **Method implementation** on the struct
 4. **Manual wiring** in init functions
 
-For a typical command, this means ~15-20 lines of repetitive structural code before any business logic. In real usage (like otdfctl), developers create 6-7 handlers with identical patterns, resulting in 100+ lines of boilerplate.
+For a typical command, this means ~15-20 lines of repetitive structural code before any business logic. In real usage, developers create 6-7 handlers with identical patterns, resulting in 100+ lines of boilerplate.
 
 ## Decision
 

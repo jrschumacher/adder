@@ -141,3 +141,16 @@ Uses conventional commits for automatic versioning:
 - `feat:` → minor version
 - `fix:` → patch version
 - `BREAKING CHANGE:` → major version
+
+## Session Management
+
+This project uses session-based task tracking for continuity across Claude Code sessions.
+
+**Session Files:**
+- Stored in `/claude_sessions/session_YYYY-MM-DD.md`
+- Track tasks with status indicators: 🔄 In Progress, 📋 Pending, ✅ Completed, ❌ Skipped
+
+**Usage:**
+- Claude automatically checks latest session file on startup
+- Tasks are tracked throughout development sessions
+- New session files created daily for organization
