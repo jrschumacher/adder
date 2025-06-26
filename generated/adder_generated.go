@@ -16,6 +16,7 @@ type AdderRequestPersistentFlags struct {
 // AdderRequest represents the parameters for the adder command
 type AdderRequest struct {
 	PersistentFlags AdderRequestPersistentFlags `json:"persistent_flags"`
+	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
 
 // AdderHandler defines the function type for handling adder commands
@@ -51,6 +52,7 @@ func runAdder(cmd *cobra.Command, args []string, handler AdderHandler) error {
 			Verbose: verbose,
 			Quiet: quiet,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler
