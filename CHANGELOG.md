@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/jrschumacher/adder/compare/v0.5.0...v0.5.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* persistent flags template ([#17](https://github.com/jrschumacher/adder/issues/17)) ([61535df](https://github.com/jrschumacher/adder/commit/61535df83aab8e8e662e5e5971691d8a8cd27516))
+
 ## [0.5.0](https://github.com/jrschumacher/adder/compare/v0.4.0...v0.5.0) (2025-06-26)
 
 
