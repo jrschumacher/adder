@@ -42,8 +42,8 @@ func NewAdderCommand(handler AdderHandler) *cobra.Command {
 
 // runAdder handles argument and flag extraction
 func runAdder(cmd *cobra.Command, args []string, handler AdderHandler) error {
-	verbose, _ := cmd.Flags().GetBool("verbose")
-	quiet, _ := cmd.Flags().GetBool("quiet")
+	verbose, _ := cmd.PersistentFlags().GetBool("verbose")
+	quiet, _ := cmd.PersistentFlags().GetBool("quiet")
 
 	// Create request
 	req := &AdderRequest{
