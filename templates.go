@@ -134,7 +134,7 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 	{{- end}}
 	
 	{{- range $cmd.PersistentFlags}}
-	{{camelCase .Name}}, _ := cmd.Flags().Get{{.GetCobraFlagMethod}}("{{.Name}}")
+	{{camelCase .Name}}, _ := cmd.PersistentFlags().Get{{.GetCobraFlagMethod}}("{{.Name}}")
 	{{- end}}
 
 	{{- range $cmd.Flags}}
