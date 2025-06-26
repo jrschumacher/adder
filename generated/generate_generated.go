@@ -24,12 +24,10 @@ type GenerateRequest struct {
 	Flags GenerateRequestFlags `json:"flags"`
 }
 
-// GenerateHandler defines the interface for handling generate commands
-type GenerateHandler interface {
-	HandleGenerate(cmd *cobra.Command, req *GenerateRequest) error
-}
+// GenerateHandler defines the function type for handling generate commands
+type GenerateHandler func(cmd *cobra.Command, req *GenerateRequest) error
 
-// NewGenerateCommand creates a new generate command with the provided handler
+// NewGenerateCommand creates a new generate command with the provided handler function
 func NewGenerateCommand(handler GenerateHandler) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "generate",
@@ -78,5 +76,5 @@ func runGenerate(cmd *cobra.Command, args []string, handler GenerateHandler) err
 	}
 
 	// Call handler
-	return handler.HandleGenerate(cmd, req)
+	return handler(cmd, req)
 }
