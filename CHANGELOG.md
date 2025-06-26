@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/jrschumacher/adder/compare/v0.6.0...v0.6.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* remove helper code ([#20](https://github.com/jrschumacher/adder/issues/20)) ([46e2f8c](https://github.com/jrschumacher/adder/commit/46e2f8cbcceebebade5fe35a6f1f3d5c6476238e))
+
 ## [0.6.0](https://github.com/jrschumacher/adder/compare/v0.5.1...v0.6.0) (2025-06-26)
 
 
