@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/jrschumacher/adder/compare/v0.3.0...v0.4.0) (2025-06-26)
+
+
+### Features
+
+* refine ux based on feedback ([#12](https://github.com/jrschumacher/adder/issues/12)) ([784341f](https://github.com/jrschumacher/adder/commit/784341f60a612b98df211e2694b89cbcd606c77e))
+
 ## [0.3.0](https://github.com/jrschumacher/adder/compare/v0.2.0...v0.3.0) (2025-06-25)
 
 
