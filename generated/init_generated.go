@@ -16,6 +16,7 @@ type InitRequestFlags struct {
 // InitRequest represents the parameters for the init command
 type InitRequest struct {
 	Flags InitRequestFlags `json:"flags"`
+	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
 
 // InitHandler defines the function type for handling init commands
@@ -51,6 +52,7 @@ func runInit(cmd *cobra.Command, args []string, handler InitHandler) error {
 			BinaryName: binaryName,
 			Force: force,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler

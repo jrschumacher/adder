@@ -22,9 +22,61 @@ import (
 	{{- if .NeedsFmt}}
 	"fmt"
 	{{- end}}
+	{{- if .NeedsIO}}
+	"fmt"
+	"io"
+	"os"
+	{{- end}}
 	
 	"github.com/spf13/cobra"
 )
+
+{{- if .NeedsIO}}
+
+// ReadFromArgsOrPipe reads data from file argument or stdin pipe
+func ReadFromArgsOrPipe(args []string, pipe *os.File) []byte {
+	if len(args) > 0 {
+		return ReadFromFile(args[0])
+	} else {
+		if pipe == nil {
+			pipe = os.Stdin
+		}
+		return ReadFromPipe(pipe)
+	}
+}
+
+// ReadFromPipe reads data from a pipe, returns nil if no piped data
+func ReadFromPipe(in *os.File) []byte {
+	stat, err := in.Stat()
+	if err != nil {
+		panic(fmt.Sprintf("failed to read stat from stdin: %v", err))
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		buf, err := io.ReadAll(in)
+		if err != nil {
+			panic(fmt.Sprintf("failed to scan bytes from stdin: %v", err))
+		}
+		return buf
+	}
+	return nil
+}
+
+// ReadFromFile reads data from a file path
+func ReadFromFile(filePath string) []byte {
+	file, err := os.Open(filePath)
+	if err != nil {
+		panic(fmt.Sprintf("failed to open file at path: %s: %v", filePath, err))
+	}
+	defer file.Close()
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		panic(fmt.Sprintf("failed to read bytes from file at path: %s: %v", filePath, err))
+	}
+	return bytes
+}
+
+{{- end}}
 `
 
 const commandTemplate = `
@@ -72,6 +124,7 @@ type {{$structName}} struct {
 	{{- if $cmd.PersistentFlags}}
 	PersistentFlags {{$structName}}PersistentFlags ` + "`" + `json:"persistent_flags"` + "`" + `
 	{{- end}}
+	RawArguments []string ` + "`" + `json:"raw_arguments"` + "`" + ` // Raw command line arguments passed to the command
 }
 
 // {{$handlerName}} defines the function type for handling {{$cmd.Name}} commands
@@ -192,6 +245,7 @@ func run{{pascalCase (cleanCommandName $cmd.Name)}}(cmd *cobra.Command, args []s
 			{{- end}}
 		},
 		{{- end}}
+		RawArguments: args,
 	}
 
 	// Call handler

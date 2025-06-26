@@ -22,6 +22,7 @@ type GenerateRequestFlags struct {
 // GenerateRequest represents the parameters for the generate command
 type GenerateRequest struct {
 	Flags GenerateRequestFlags `json:"flags"`
+	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
 
 // GenerateHandler defines the function type for handling generate commands
@@ -75,6 +76,7 @@ func runGenerate(cmd *cobra.Command, args []string, handler GenerateHandler) err
 			Force: force,
 			PackageStrategy: packageStrategy,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler

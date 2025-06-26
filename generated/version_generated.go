@@ -10,6 +10,7 @@ import (
 
 // VersionRequest represents the parameters for the version command
 type VersionRequest struct {
+	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
 
 // VersionHandler defines the function type for handling version commands
@@ -37,6 +38,7 @@ func runVersion(cmd *cobra.Command, args []string, handler VersionHandler) error
 
 	// Create request
 	req := &VersionRequest{
+		RawArguments: args,
 	}
 
 	// Call handler

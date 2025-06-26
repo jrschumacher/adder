@@ -144,6 +144,16 @@ func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 		}
 	}
 
+	// Check if any command needs I/O helpers (for stdin/file handling)
+	needsIO := false
+	for _, cmd := range commands {
+		// Enable I/O helpers if command has arguments (could be files) or if explicitly marked
+		if len(cmd.Arguments) > 0 {
+			needsIO = true
+			break
+		}
+	}
+
 	// Determine package name based on the first command's file path
 	// All commands in the same file should have the same package name
 	packageName := g.config.Package
@@ -155,9 +165,11 @@ func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 	packageData := struct {
 		Package  string
 		NeedsFmt bool
+		NeedsIO  bool
 	}{
 		Package:  packageName,
 		NeedsFmt: needsFmt,
+		NeedsIO:  needsIO,
 	}
 
 	tmpl := template.Must(template.New("package").Parse(Templates.Package))
