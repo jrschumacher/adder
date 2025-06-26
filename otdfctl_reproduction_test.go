@@ -105,7 +105,7 @@ command:
 	for _, tc := range testConfigs {
 		t.Run(tc.name, func(t *testing.T) {
 			// Clean output directory
-			os.RemoveAll(outputDir)
+			_ = os.RemoveAll(outputDir)
 			
 			// Generate with this config
 			adder := New(tc.config)
