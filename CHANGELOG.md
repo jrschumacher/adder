@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/jrschumacher/adder/compare/v0.5.1...v0.6.0) (2025-06-26)
+
+
+### Features
+
+* add raw arguments to the req ([#16](https://github.com/jrschumacher/adder/issues/16)) ([79fe289](https://github.com/jrschumacher/adder/commit/79fe2897c7c7151c8c15fe45df5ce3c3e01a4338))
+
 ## [0.5.1](https://github.com/jrschumacher/adder/compare/v0.5.0...v0.5.1) (2025-06-26)
 
 
