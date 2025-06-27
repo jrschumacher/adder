@@ -495,7 +495,8 @@ func (p *Parser) validateCommand(cmd *Command) error {
 		}
 	}
 
-	return nil
+	// Run enhanced validation (type consistency, defaults, etc.)
+	return validateCommandConfiguration(cmd, cmd.FilePath)
 }
 
 // GetCommandPath returns the command path from the file path

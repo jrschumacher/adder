@@ -3,7 +3,7 @@
 package testpkg
 
 import (
-	
+	"github.com/jrschumacher/adder"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +16,11 @@ type SimpleRequestFlags struct {
 type SimpleRequest struct {
 	Flags SimpleRequestFlags `json:"flags"`
 	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
+}
+
+// GetRawArguments implements the adder.Request interface
+func (r *SimpleRequest) GetRawArguments() []string {
+	return r.RawArguments
 }
 
 // SimpleHandler defines the function type for handling simple commands

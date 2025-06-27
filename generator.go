@@ -130,23 +130,7 @@ func (g *Generator) generateFile(filename string, commands []*Command) error {
 func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 	var buf bytes.Buffer
 
-	// Check if any command needs fmt (for enum validation)
-	needsFmt := false
-	for _, cmd := range commands {
-		for _, flag := range cmd.Flags {
-			if len(flag.Enum) > 0 {
-				needsFmt = true
-				break
-			}
-		}
-		if needsFmt {
-			break
-		}
-	}
-
-	// I/O helpers are not automatically generated
-	// They can be added manually if needed for specific use cases
-	needsIO := false
+	// adder package is always imported for Request interface
 
 	// Determine package name based on the first command's file path
 	// All commands in the same file should have the same package name
@@ -157,13 +141,9 @@ func (g *Generator) generateFileContent(commands []*Command) (string, error) {
 
 	// Generate package header
 	packageData := struct {
-		Package  string
-		NeedsFmt bool
-		NeedsIO  bool
+		Package string
 	}{
-		Package:  packageName,
-		NeedsFmt: needsFmt,
-		NeedsIO:  needsIO,
+		Package: packageName,
 	}
 
 	tmpl := template.Must(template.New("package").Parse(Templates.Package))
