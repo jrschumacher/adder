@@ -23,6 +23,9 @@ func (r *SimpleRequest) GetRawArguments() []string {
 	return r.RawArguments
 }
 
+// Ensure SimpleRequest implements adder.Request interface at compile time
+var _ adder.Request = (*SimpleRequest)(nil)
+
 // SimpleHandler defines the function type for handling simple commands
 type SimpleHandler func(cmd *cobra.Command, req *SimpleRequest) error
 

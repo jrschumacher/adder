@@ -3,20 +3,29 @@
 package generated
 
 import (
-	
+	"github.com/jrschumacher/adder"
 	"github.com/spf13/cobra"
 )
 
 // AdderRequestPersistentFlags represents the persistent flags for the adder command
 type AdderRequestPersistentFlags struct {
 	Verbose bool `json:"verbose"` // Enable verbose output for debugging and CI
-	Quiet bool `json:"quiet"` // Suppress all output except errors
+	Quiet   bool `json:"quiet"`   // Suppress all output except errors
 }
 
 // AdderRequest represents the parameters for the adder command
 type AdderRequest struct {
 	PersistentFlags AdderRequestPersistentFlags `json:"persistent_flags"`
+	RawArguments    []string                    `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
+
+// GetRawArguments implements the adder.Request interface
+func (r *AdderRequest) GetRawArguments() []string {
+	return r.RawArguments
+}
+
+// Ensure AdderRequest implements adder.Request interface at compile time
+var _ adder.Request = (*AdderRequest)(nil)
 
 // AdderHandler defines the function type for handling adder commands
 type AdderHandler func(cmd *cobra.Command, req *AdderRequest) error
@@ -24,8 +33,8 @@ type AdderHandler func(cmd *cobra.Command, req *AdderRequest) error
 // NewAdderCommand creates a new adder command with the provided handler function
 func NewAdderCommand(handler AdderHandler) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "adder",
-		Short:   "A documentation-driven CLI generator",
+		Use:   "adder",
+		Short: "A documentation-driven CLI generator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runAdder(cmd, args, handler)
 		},
@@ -49,8 +58,9 @@ func runAdder(cmd *cobra.Command, args []string, handler AdderHandler) error {
 	req := &AdderRequest{
 		PersistentFlags: AdderRequestPersistentFlags{
 			Verbose: verbose,
-			Quiet: quiet,
+			Quiet:   quiet,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler

@@ -35,7 +35,7 @@ const commandTemplate = `
 // {{$structName}}Arguments represents the arguments for the {{$cmd.Name}} command
 type {{$structName}}Arguments struct {
 	{{- range $cmd.Arguments}}
-	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Required}} validate:"required"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
+	{{pascalCase .Name}} {{.GetGoType}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Required}} validate:"required"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
 	{{- end}}
 }
 {{- end}}
@@ -44,7 +44,7 @@ type {{$structName}}Arguments struct {
 // {{$structName}}Flags represents the flags for the {{$cmd.Name}} command
 type {{$structName}}Flags struct {
 	{{- range $cmd.Flags}}
-	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
+	{{pascalCase .Name}} {{.GetGoType}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
 	{{- end}}
 }
 {{- end}}
@@ -53,7 +53,7 @@ type {{$structName}}Flags struct {
 // {{$structName}}PersistentFlags represents the persistent flags for the {{$cmd.Name}} command
 type {{$structName}}PersistentFlags struct {
 	{{- range $cmd.PersistentFlags}}
-	{{pascalCase .Name}} {{.Type}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
+	{{pascalCase .Name}} {{.GetGoType}} ` + "`" + `json:"{{camelCase .Name}}"{{if .Enum}} validate:"oneof={{range $i, $v := .Enum}}{{if $i}} {{end}}{{$v}}{{end}}"{{end}}` + "`" + `{{if .Description}} // {{escapeString .Description}}{{end}}
 	{{- end}}
 }
 {{- end}}
@@ -76,6 +76,9 @@ type {{$structName}} struct {
 func (r *{{$structName}}) GetRawArguments() []string {
 	return r.RawArguments
 }
+
+// Ensure {{$structName}} implements adder.Request interface at compile time
+var _ adder.Request = (*{{$structName}})(nil)
 
 // {{$handlerName}} defines the function type for handling {{$cmd.Name}} commands
 type {{$handlerName}} func(cmd *cobra.Command, req *{{$structName}}) error

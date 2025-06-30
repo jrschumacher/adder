@@ -3,20 +3,29 @@
 package generated
 
 import (
-	
+	"github.com/jrschumacher/adder"
 	"github.com/spf13/cobra"
 )
 
 // InitRequestFlags represents the flags for the init command
 type InitRequestFlags struct {
 	BinaryName string `json:"binaryName"` // Name of the binary/CLI (required)
-	Force bool `json:"force"` // Overwrite existing configuration file
+	Force      bool   `json:"force"`      // Overwrite existing configuration file
 }
 
 // InitRequest represents the parameters for the init command
 type InitRequest struct {
-	Flags InitRequestFlags `json:"flags"`
+	Flags        InitRequestFlags `json:"flags"`
+	RawArguments []string         `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
+
+// GetRawArguments implements the adder.Request interface
+func (r *InitRequest) GetRawArguments() []string {
+	return r.RawArguments
+}
+
+// Ensure InitRequest implements adder.Request interface at compile time
+var _ adder.Request = (*InitRequest)(nil)
 
 // InitHandler defines the function type for handling init commands
 type InitHandler func(cmd *cobra.Command, req *InitRequest) error
@@ -24,8 +33,8 @@ type InitHandler func(cmd *cobra.Command, req *InitRequest) error
 // NewInitCommand creates a new init command with the provided handler function
 func NewInitCommand(handler InitHandler) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "init",
-		Short:   "Initialize adder configuration",
+		Use:   "init",
+		Short: "Initialize adder configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runInit(cmd, args, handler)
 		},
@@ -49,8 +58,9 @@ func runInit(cmd *cobra.Command, args []string, handler InitHandler) error {
 	req := &InitRequest{
 		Flags: InitRequestFlags{
 			BinaryName: binaryName,
-			Force: force,
+			Force:      force,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler

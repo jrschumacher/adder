@@ -3,7 +3,6 @@ package adder
 import (
 	"testing"
 
-	"github.com/jrschumacher/adder/cmd/adder/generated"
 	"github.com/spf13/cobra"
 )
 
@@ -94,28 +93,35 @@ func TestRealWorldConfigScenario(t *testing.T) {
 	// Simulate what happens when user runs: adder generate
 	// (no --output flag provided, so Cobra returns default)
 	
-	// This is what the generate command would receive
-	req := &generated.GenerateRequest{
-		Flags: generated.GenerateRequestFlags{
-			BinaryName:      "", // Not provided
-			Input:           "docs/commands", // Default 
-			Output:          "generated",     // ❌ PROBLEM: Cobra default, but we can't tell it wasn't provided
-			Package:         "generated",     // Default
-			Suffix:          "_generated.go", // Default
-			PackageStrategy: "directory",     // Default
-		},
+	// Simulate what the generate command would receive
+	type mockFlags struct {
+		BinaryName      string
+		Input           string
+		Output          string
+		Package         string
+		Suffix          string
+		PackageStrategy string
+	}
+	
+	req := mockFlags{
+		BinaryName:      "", // Not provided
+		Input:           "docs/commands", // Default 
+		Output:          "generated",     // ❌ PROBLEM: Cobra default, but we can't tell it wasn't provided
+		Package:         "generated",     // Default
+		Suffix:          "_generated.go", // Default
+		PackageStrategy: "directory",     // Default
 	}
 
 	// Merge with current logic
 	merged := MergeWithFlags(configFromFile, 
-		req.Flags.BinaryName,
-		req.Flags.Input,
-		req.Flags.Output,    // This is "generated" even though user didn't provide --output
-		req.Flags.Package,
-		req.Flags.Suffix)
+		req.BinaryName,
+		req.Input,
+		req.Output,    // This is "generated" even though user didn't provide --output
+		req.Package,
+		req.Suffix)
 
 	t.Logf("Config file output: %s", configFromFile.OutputDir)
-	t.Logf("Flag value (default): %s", req.Flags.Output)
+	t.Logf("Flag value (default): %s", req.Output)
 	t.Logf("Merged result: %s", merged.OutputDir)
 
 	// The bug: if config has non-default value, it gets ignored
