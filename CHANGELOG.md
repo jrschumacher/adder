@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/jrschumacher/adder/compare/v0.6.1...v0.7.0) (2025-07-04)
+
+
+### Features
+
+* strict linting and improved generated files ([#22](https://github.com/jrschumacher/adder/issues/22)) ([2e2ae2a](https://github.com/jrschumacher/adder/commit/2e2ae2ae2869ed18724c8492d7108474cc96ed3c))
+
 ## [0.6.1](https://github.com/jrschumacher/adder/compare/v0.6.0...v0.6.1) (2025-06-26)
 
 
