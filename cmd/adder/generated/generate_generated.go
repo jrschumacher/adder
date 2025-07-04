@@ -3,26 +3,35 @@
 package generated
 
 import (
-	
+	"github.com/jrschumacher/adder"
 	"github.com/spf13/cobra"
 )
 
 // GenerateRequestFlags represents the flags for the generate command
 type GenerateRequestFlags struct {
-	BinaryName string `json:"binaryName"` // Name of the binary/CLI (required unless set in config)
-	Input string `json:"input"` // Input directory containing markdown files
-	Output string `json:"output"` // Output directory for generated files
-	Package string `json:"pkg"` // Go package name for generated files
-	Suffix string `json:"suffix"` // File suffix for generated files
-	Validate bool `json:"validate"` // Validate documentation without generating files
-	Force bool `json:"force"` // Force regeneration of all files regardless of modification time
+	BinaryName      string `json:"binaryName"`      // Name of the binary/CLI (required unless set in config)
+	Input           string `json:"input"`           // Input directory containing markdown files
+	Output          string `json:"output"`          // Output directory for generated files
+	Package         string `json:"pkg"`             // Go package name for generated files
+	Suffix          string `json:"suffix"`          // File suffix for generated files
+	Validate        bool   `json:"validate"`        // Validate documentation without generating files
+	Force           bool   `json:"force"`           // Force regeneration of all files regardless of modification time
 	PackageStrategy string `json:"packageStrategy"` // Package naming strategy (single, directory, path)
 }
 
 // GenerateRequest represents the parameters for the generate command
 type GenerateRequest struct {
-	Flags GenerateRequestFlags `json:"flags"`
+	Flags        GenerateRequestFlags `json:"flags"`
+	RawArguments []string             `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
+
+// GetRawArguments implements the adder.Request interface
+func (r *GenerateRequest) GetRawArguments() []string {
+	return r.RawArguments
+}
+
+// Ensure GenerateRequest implements adder.Request interface at compile time
+var _ adder.Request = (*GenerateRequest)(nil)
 
 // GenerateHandler defines the function type for handling generate commands
 type GenerateHandler func(cmd *cobra.Command, req *GenerateRequest) error
@@ -30,8 +39,8 @@ type GenerateHandler func(cmd *cobra.Command, req *GenerateRequest) error
 // NewGenerateCommand creates a new generate command with the provided handler function
 func NewGenerateCommand(handler GenerateHandler) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "generate",
-		Short:   "Generate CLI commands from markdown documentation",
+		Use:   "generate",
+		Short: "Generate CLI commands from markdown documentation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runGenerate(cmd, args, handler)
 		},
@@ -66,15 +75,16 @@ func runGenerate(cmd *cobra.Command, args []string, handler GenerateHandler) err
 	// Create request
 	req := &GenerateRequest{
 		Flags: GenerateRequestFlags{
-			BinaryName: binaryName,
-			Input: input,
-			Output: output,
-			Package: pkg,
-			Suffix: suffix,
-			Validate: validate,
-			Force: force,
+			BinaryName:      binaryName,
+			Input:           input,
+			Output:          output,
+			Package:         pkg,
+			Suffix:          suffix,
+			Validate:        validate,
+			Force:           force,
 			PackageStrategy: packageStrategy,
 		},
+		RawArguments: args,
 	}
 
 	// Call handler

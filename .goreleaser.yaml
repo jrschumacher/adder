@@ -16,7 +16,7 @@ before:
 # Build configuration
 builds:
   - id: adder
-    main: ./cmd
+    main: ./cmd/adder
     binary: adder
     ldflags:
       - -s -w

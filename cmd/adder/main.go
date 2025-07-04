@@ -32,6 +32,7 @@ It processes markdown files with YAML frontmatter to create:
 	rootCmd.AddCommand(generated.NewGenerateCommand(generateCmd))
 	rootCmd.AddCommand(generated.NewVersionCommand(versionCmd))
 	rootCmd.AddCommand(generated.NewInitCommand(initCmd))
+	rootCmd.AddCommand(generated.NewSchemaCommand(schemaCmd))
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

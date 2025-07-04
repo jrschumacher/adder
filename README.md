@@ -19,6 +19,9 @@ Adder generates type-safe CLI commands from markdown documentation, providing a 
 - **⚡ Performance** - No runtime parsing overhead
 - **🎯 Handler Interfaces** - Easy testing and dependency injection
 - **📁 Organized Output** - Preserves directory structure to avoid naming conflicts
+- **✅ Enhanced Validation** - Markdown linter with strict type checking and enum validation
+- **🔌 Request Interface** - All generated requests implement `adder.Request` for consistency
+- **🛡️ Centralized Enum Validation** - Clean `adder.ValidateEnum()` function for runtime validation
 - **🧪 Comprehensive Testing** - Unit, integration, golden file, and example tests
 - **🚀 Production Ready** - Full CI/CD pipeline with automated releases
 - **🔧 Self-Dogfooding** - Adder generates its own CLI commands
@@ -118,16 +121,27 @@ type HelloRequestArguments struct {
 
 type HelloRequestFlags struct {
     Capitalize bool `json:"capitalize"`
+    Style      string `json:"style" validate:"oneof=normal bold italic"`
 }
 
+// All requests implement adder.Request interface
 type HelloRequest struct {
-    Arguments HelloRequestArguments `json:"arguments"`
-    Flags     HelloRequestFlags     `json:"flags"`
+    Arguments    HelloRequestArguments `json:"arguments"`
+    Flags        HelloRequestFlags     `json:"flags"`
+    RawArguments []string              `json:"raw_arguments"`
+}
+
+// GetRawArguments implements adder.Request interface
+func (r *HelloRequest) GetRawArguments() []string {
+    return r.RawArguments
 }
 
 // Handler receives full command access
-type HelloHandler interface {
-    HandleHello(cmd *cobra.Command, req *HelloRequest) error
+type HelloHandler func(cmd *cobra.Command, req *HelloRequest) error
+
+// Clean enum validation in generated code
+if err := adder.ValidateEnum("style", style, []string{"normal", "bold", "italic"}); err != nil {
+    return err
 }
 ```
 
@@ -170,6 +184,59 @@ index_format: directory      # directory, index, _index, hugo
 - The parser looks for `{binary_name}.md` in the input directory
 - This file becomes your CLI's root command
 - Example: `binary_name: myapp` → looks for `myapp.md`
+
+## ✅ Enhanced Validation
+
+Adder acts as a comprehensive markdown linter, catching configuration errors early:
+
+### **Type Consistency Validation**
+```bash
+# ❌ This will fail validation
+flags:
+  - name: count
+    type: int
+    default: "not-a-number"  # Error: must be integer for type 'int'
+
+# ✅ This is correct
+flags:
+  - name: count
+    type: int
+    default: 42
+```
+
+### **Enum Validation**
+```bash
+# ❌ This will fail validation
+flags:
+  - name: level
+    type: int                    # Error: enum only supported on string type
+    enum: ["debug", "info"]
+
+# ❌ This will also fail
+flags:
+  - name: level
+    type: string
+    enum: ["debug", "info"]
+    default: "invalid"           # Error: default must be in enum values
+
+# ✅ This is correct
+flags:
+  - name: level
+    type: string
+    enum: ["debug", "info", "warn"]
+    default: "info"
+```
+
+### **Validation Commands**
+```bash
+# Validate without generating
+adder generate --validate
+
+# Example validation errors
+❌ Validation failed: flag count: default value must be an integer for type 'int', got 'not-a-number'
+❌ Validation failed: flag level: enum validation only supported on string type, got 'int'
+❌ Validation failed: flag level: default value 'invalid' must be one of: [debug info warn]
+```
 
 ## 🎯 Key Benefits
 

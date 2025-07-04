@@ -3,14 +3,22 @@
 package generated
 
 import (
-	
+	"github.com/jrschumacher/adder"
 	"github.com/spf13/cobra"
 )
 
-
 // VersionRequest represents the parameters for the version command
 type VersionRequest struct {
+	RawArguments []string `json:"raw_arguments"` // Raw command line arguments passed to the command
 }
+
+// GetRawArguments implements the adder.Request interface
+func (r *VersionRequest) GetRawArguments() []string {
+	return r.RawArguments
+}
+
+// Ensure VersionRequest implements adder.Request interface at compile time
+var _ adder.Request = (*VersionRequest)(nil)
 
 // VersionHandler defines the function type for handling version commands
 type VersionHandler func(cmd *cobra.Command, req *VersionRequest) error
@@ -18,8 +26,8 @@ type VersionHandler func(cmd *cobra.Command, req *VersionRequest) error
 // NewVersionCommand creates a new version command with the provided handler function
 func NewVersionCommand(handler VersionHandler) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "version",
-		Short:   "Print version information",
+		Use:   "version",
+		Short: "Print version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runVersion(cmd, args, handler)
 		},
@@ -37,6 +45,7 @@ func runVersion(cmd *cobra.Command, args []string, handler VersionHandler) error
 
 	// Create request
 	req := &VersionRequest{
+		RawArguments: args,
 	}
 
 	// Call handler

@@ -1,59 +1,58 @@
 ---
-title: Say hello to someone
+title: Hello command group
 
 command:
-  name: hello [name]
-  arguments:
-    - name: name
-      description: Name of the person to greet
-      required: true
-      type: string
+  name: hello
+  short: Greeting commands and utilities
+  long: |
+    The hello command group provides various greeting functionality
+    including personalized messages, formatting options, and debugging tools.
+    
+    This serves as the parent command for hello-related subcommands and
+    demonstrates command grouping in adder.
   flags:
-    - name: capitalize
-      description: Capitalize the greeting
+    - name: version
+      description: Show version information
       default: false
       type: bool
-    - name: ascii-art
-      shorthand: a
-      description: ASCII art style for the greeting
-      default: small
+  persistent_flags:
+    - name: verbose
+      shorthand: v
+      description: Enable verbose output for all hello commands
+      default: false
+      type: bool
+    - name: config
+      shorthand: c
+      description: Configuration file path
       type: string
-      enum:
-        - small
-        - big
-        - banner
-    - name: repeat
-      shorthand: r
-      description: Number of times to repeat the greeting
-      default: 1
-      type: int
+      default: ~/.hello.yaml
 ---
 
-# Say hello to someone
+# Hello Commands
 
-Greet someone with a friendly hello message.
+The hello command group provides greeting functionality with various customization options.
 
-This command demonstrates the adder package's ability to generate type-safe CLI commands from markdown documentation.
+## Available Commands
 
-## Arguments
+- `hello greet` - Say hello to someone (main greeting command)
+- `hello debug` - Debug greeting functionality (hidden)
 
-- `name` - Name of the person to greet (required)
+## Global Flags
 
-## Flags
+All hello commands support these persistent flags:
 
-- `--capitalize` - Capitalize the greeting
-- `--ascii-art, -a` - ASCII art style for the greeting (small|big|banner)
-- `--repeat, -r` - Number of times to repeat the greeting
+- `--verbose, -v` - Enable verbose output
+- `--config, -c` - Specify configuration file path
 
 ## Examples
 
 ```bash
-# Simple greeting
-hello Alice
+# Show help for hello commands
+hello --help
 
-# Capitalized greeting with big ASCII art
-hello Alice --capitalize --ascii-art=big
+# Use verbose mode for any hello command
+hello greet Alice --verbose
 
-# Repeat the greeting multiple times with banner style
-hello Bob --ascii-art=banner --repeat=2
+# Use custom config file
+hello greet Bob --config /path/to/config.yaml
 ```
