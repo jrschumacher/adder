@@ -5,64 +5,73 @@ import (
 	"testing"
 
 	"github.com/jrschumacher/adder/example/generated"
+	"github.com/jrschumacher/adder/example/generated/hello"
 	"github.com/spf13/cobra"
 )
 
-func TestHelloHandler_HandleHello(t *testing.T) {
+func TestGreetHandler_HandleGreet(t *testing.T) {
 	tests := []struct {
 		name     string
-		req      *generated.HelloRequest
+		req      *hello.GreetRequest
 		wantErr  bool
 		validate func(t *testing.T)
 	}{
 		{
 			name: "simple greeting",
-			req: &generated.HelloRequest{
-				Arguments: generated.HelloRequestArguments{
+			req: &hello.GreetRequest{
+				Arguments: hello.GreetRequestArguments{
 					Name: "World",
 				},
-				Flags: generated.HelloRequestFlags{
+				Flags: hello.GreetRequestFlags{
 					Capitalize: false,
 					Repeat:     1,
+					Prefix:     "Hello",
+					Format:     "text",
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "capitalized greeting",
-			req: &generated.HelloRequest{
-				Arguments: generated.HelloRequestArguments{
+			req: &hello.GreetRequest{
+				Arguments: hello.GreetRequestArguments{
 					Name: "Alice",
 				},
-				Flags: generated.HelloRequestFlags{
+				Flags: hello.GreetRequestFlags{
 					Capitalize: true,
 					Repeat:     1,
+					Prefix:     "Hello",
+					Format:     "text",
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "repeated greeting",
-			req: &generated.HelloRequest{
-				Arguments: generated.HelloRequestArguments{
+			req: &hello.GreetRequest{
+				Arguments: hello.GreetRequestArguments{
 					Name: "Bob",
 				},
-				Flags: generated.HelloRequestFlags{
+				Flags: hello.GreetRequestFlags{
 					Capitalize: false,
 					Repeat:     3,
+					Prefix:     "Hello",
+					Format:     "text",
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "empty name should use default",
-			req: &generated.HelloRequest{
-				Arguments: generated.HelloRequestArguments{
-					Name: "",
+			name: "JSON format greeting",
+			req: &hello.GreetRequest{
+				Arguments: hello.GreetRequestArguments{
+					Name: "Charlie",
 				},
-				Flags: generated.HelloRequestFlags{
+				Flags: hello.GreetRequestFlags{
 					Capitalize: false,
 					Repeat:     1,
+					Prefix:     "Hello",
+					Format:     "json",
 				},
 			},
 			wantErr: false,
@@ -73,10 +82,10 @@ func TestHelloHandler_HandleHello(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := handleHello(cmd, tt.req)
+			err := handleGreet(cmd, tt.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("HelloHandler.HandleHello() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GreetHandler.HandleGreet() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -88,12 +97,18 @@ func TestHelloHandler_HandleHello(t *testing.T) {
 	}
 }
 
-func TestHelloHandler_Integration(t *testing.T) {
+func TestGreetHandler_Integration(t *testing.T) {
 	// This test demonstrates full integration testing
-	// Create command using generated function
-	cmd := generated.NewHelloCommand(func(cmd *cobra.Command, req *generated.HelloRequest) error {
-		return handleHello(cmd, req)
+	// Create the parent hello command
+	helloCmd := generated.NewHelloCommand(func(cmd *cobra.Command, req *generated.HelloRequest) error {
+		return cmd.Help()
 	})
+
+	// Add the greet subcommand
+	greetCmd := hello.NewGreetCommand(func(cmd *cobra.Command, req *hello.GreetRequest) error {
+		return handleGreet(cmd, req)
+	})
+	helloCmd.AddCommand(greetCmd)
 
 	// Test various argument combinations
 	testCases := []struct {
@@ -101,36 +116,36 @@ func TestHelloHandler_Integration(t *testing.T) {
 		args []string
 	}{
 		{
-			name: "basic hello",
-			args: []string{"Alice"},
+			name: "basic greet",
+			args: []string{"greet", "Alice"},
 		},
 		{
-			name: "hello with capitalize flag",
-			args: []string{"Bob", "--capitalize"},
+			name: "greet with capitalize flag",
+			args: []string{"greet", "Bob", "--capitalize"},
 		},
 		{
-			name: "hello with repeat flag",
-			args: []string{"Charlie", "--repeat", "2"},
+			name: "greet with repeat flag",
+			args: []string{"greet", "Charlie", "--repeat", "2"},
 		},
 		{
-			name: "hello with both flags",
-			args: []string{"Diana", "--capitalize", "--repeat", "3"},
+			name: "greet with multiple flags",
+			args: []string{"greet", "Diana", "--capitalize", "--repeat", "3", "--format", "json"},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set command arguments
-			cmd.SetArgs(tc.args)
+			helloCmd.SetArgs(tc.args)
 
 			// Execute command
-			err := cmd.Execute()
+			err := helloCmd.Execute()
 			if err != nil {
 				t.Errorf("Command execution failed: %v", err)
 			}
 
 			// Reset command for next test
-			cmd.SetArgs(nil)
+			helloCmd.SetArgs(nil)
 		})
 	}
 }
@@ -145,30 +160,32 @@ func (m *MockGreeter) Greet(name string, capitalize bool, repeat int) {
 	m.calls = append(m.calls, call)
 }
 
-func TestHelloHandler_WithMockDependency(t *testing.T) {
+func TestGreetHandler_WithMockDependency(t *testing.T) {
 	// This example shows how you might test with injected dependencies
 	// if your handler had external dependencies
 
 	_ = &MockGreeter{} // Example mock for documentation
 
 	// In a real scenario, you might inject the mock into your handler
-	// handler := NewHelloHandlerWithGreeter(mock)
+	// handler := NewGreetHandlerWithGreeter(mock)
 
 	cmd := &cobra.Command{}
 
-	req := &generated.HelloRequest{
-		Arguments: generated.HelloRequestArguments{
+	req := &hello.GreetRequest{
+		Arguments: hello.GreetRequestArguments{
 			Name: "TestUser",
 		},
-		Flags: generated.HelloRequestFlags{
+		Flags: hello.GreetRequestFlags{
 			Capitalize: true,
 			Repeat:     2,
+			Prefix:     "Hello",
+			Format:     "text",
 		},
 	}
 
-	err := handleHello(cmd, req)
+	err := handleGreet(cmd, req)
 	if err != nil {
-		t.Fatalf("HandleHello failed: %v", err)
+		t.Fatalf("HandleGreet failed: %v", err)
 	}
 
 	// In a real test with dependency injection, you would verify
